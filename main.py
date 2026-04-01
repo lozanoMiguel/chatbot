@@ -30,7 +30,7 @@ async def root():
 async def health():
     """Health check para verificar que el servicio está funcionando"""
     return {
-        "status": "healthy",
+        "status": "Healthy",
         "python_version": "3.11",
         "framework": "FastAPI"
     }
