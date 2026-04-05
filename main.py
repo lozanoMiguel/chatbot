@@ -14,6 +14,7 @@ client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
+<<<<<<< HEAD
 app = FastAPI(title="Asistente de Café", version="1.0.0")
 
 # Permitir peticiones desde cualquier origen (para la interfaz web)
@@ -354,3 +355,6 @@ async def get_chat():
     </body>
     </html>
     """
+
+
+
