@@ -1,9 +1,9 @@
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from openai import OpenAI
+from fastapi import FastAPI, HTTPException # pyright: ignore[reportMissingImports]
+from fastapi.middleware.cors import CORSMiddleware # pyright: ignore[reportMissingImports]
+from fastapi.responses import HTMLResponse # pyright: ignore[reportMissingImports]
+from pydantic import BaseModel # pyright: ignore[reportMissingImports]
+from openai import OpenAI # pyright: ignore[reportMissingImports]
 import os
 from dotenv import load_dotenv
 
@@ -14,7 +14,7 @@ client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
-<<<<<<< HEAD
+
 app = FastAPI(title="Asistente de Café", version="1.0.0")
 
 # Permitir peticiones desde cualquier origen (para la interfaz web)
