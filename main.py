@@ -1,23 +1,25 @@
-
-from fastapi import FastAPI, HTTPException # pyright: ignore[reportMissingImports]
-from fastapi.middleware.cors import CORSMiddleware # pyright: ignore[reportMissingImports]
-from fastapi.responses import HTMLResponse # pyright: ignore[reportMissingImports]
-from pydantic import BaseModel # pyright: ignore[reportMissingImports]
-from openai import OpenAI # pyright: ignore[reportMissingImports]
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
 
 load_dotenv()
 
-# Inicializar el cliente de OpenAI (nueva forma)
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+# Cliente OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Cargar la base de datos vectorial (creada con indexar_documentos.py)
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})  # recupera los 4 fragmentos más relevantes
 
-app = FastAPI(title="Asistente de Café", version="1.0.0")
+app = FastAPI(title="Cafetería Tostadora - Asistente", version="1.0.0")
 
-# Permitir peticiones desde cualquier origen (para la interfaz web)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,41 +33,70 @@ class Pregunta(BaseModel):
 class Respuesta(BaseModel):
     respuesta: str
 
+def buscar_contexto(pregunta: str) -> str:
+    """Busca fragmentos relevantes en la base de conocimiento RAG."""
+    docs = vectorstore.similarity_search(pregunta, k=4)
+    contexto = "\n\n".join([doc.page_content for doc in docs])
+    return contexto
+
 @app.post("/preguntar", response_model=Respuesta)
 async def preguntar(pregunta: Pregunta):
-    """Endpoint que recibe una pregunta sobre café y responde con OpenAI"""
     try:
-        system_prompt = """
-        Eres un experto barista y conocedor de café. Tu misión es ayudar a los usuarios con dudas sobre:
-        - Tipos de granos (arábiga, robusta, etc.)
-        - Métodos de preparación (espresso, prensa francesa, pour over, etc.)
-        - Temperatura, molienda, extracción
-        - Historia y curiosidades del café
-        - Recomendaciones de cafeterías y marcas
-        Responde de forma amigable, precisa y con pasión por el café.
-        Responde siempre en español.
-        """
+        contexto = buscar_contexto(pregunta.mensaje)
 
-        # NUEVA forma de llamar a la API (versión >=1.0.0)
+        system_prompt = f"""
+Eres "CafBot", el asistente virtual de una cafetería tostadora especializada. Tu misión es ayudar al cliente a elegir el café perfecto.
+
+INFORMACIÓN DE LA CAFETERÍA (contexto RAG):
+{contexto}
+
+REGLAS ESTRICTAS:
+1. Usa SOLO la información del contexto. Si no encuentras un café o dato, di: "No tengo esa información en mi base de datos. ¿Podrías consultar directamente en nuestra tienda?"
+
+2. FLUJO DE RECOMENDACIÓN (sigue este orden, haz UNA pregunta cada vez, NO todas juntas):
+
+   - Paso 1: Pregunta por el PERFIL deseado (Tradicional, Exótico o Funky). Si el cliente no sabe, explica brevemente:
+        * Tradicional: sabores a chocolate, nueces, caramelo. Acidez suave.
+        * Exótico: sabores frutales, florales, cítricos. Acidez brillante.
+        * Funky: sabores fermentados, vino, frutas maduras. Intenso y complejo.
+   
+   - Paso 2: Pregunta por el TOSTADO (Expresso o Filtro). Si no sabe, explica:
+        * Expresso: tostado más oscuro, cuerpo intenso, ideal para máquina espresso o moka.
+        * Filtro: tostado más claro, resalta notas frutales, ideal para V60, Chemex, prensa.
+   
+   - Paso 3: Pregunta por NOTAS preferidas (achocolatado, afrutado, cítrico, frutos secos, etc.) o nivel de intensidad (bajo 1/3, medio 2/3, alto 3/3).
+   
+   - Paso 4: Recomienda 1 o 2 cafés que cumplan los criterios. Muestra: nombre, notas destacadas, acidez, cuerpo, puntuación SCA (si está disponible) y una frase de cierre.
+
+3. Si el cliente YA proporciona toda la información de una vez, haz la recomendación directamente.
+
+4. Sé amable, entusiasta y usa emojis de café ☕, taza 🍵, fuego 🔥 según el tono.
+
+5. Responde siempre en español.
+
+FORMATO DE RESPUESTA (cuando recomiendes):
+"☕ Según lo que me dices, te recomiendo [NOMBRE]. Es un café [PERFIL] tostado [TOSTADO] con notas de [NOTAS]. Tiene [ACIDEZ] y cuerpo [CUERPO]. [PUNTUACIÓN SCA si está]. ¡[FRASE DE CIERRE]!"
+"""
+
         completion = client.chat.completions.create(
-            model="gpt-4.1-mini",  # o "gpt-4" si tienes acceso
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": pregunta.mensaje}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=600,
+            temperature=0.5
         )
 
         respuesta_texto = completion.choices[0].message.content
         return Respuesta(respuesta=respuesta_texto)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error con OpenAI: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+# Endpoint para la interfaz HTML (la misma que ya tenías)
 @app.get("/", response_class=HTMLResponse)
 async def get_chat():
-    """Servir la interfaz HTML del chatbot"""
     return """
     <!DOCTYPE html>
     <html lang="es">
@@ -74,12 +105,7 @@ async def get_chat():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Asistente de Café ☕</title>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -88,7 +114,6 @@ async def get_chat():
                 justify-content: center;
                 align-items: center;
             }
-            
             .chat-container {
                 width: 90%;
                 max-width: 800px;
@@ -100,61 +125,43 @@ async def get_chat():
                 flex-direction: column;
                 overflow: hidden;
             }
-            
             .chat-header {
                 background: #6f4e37;
                 color: white;
                 padding: 20px;
                 text-align: center;
             }
-            
-            .chat-header h1 {
-                font-size: 1.5em;
-                margin-bottom: 5px;
-            }
-            
-            .chat-header p {
-                font-size: 0.9em;
-                opacity: 0.9;
-            }
-            
+            .chat-header h1 { font-size: 1.5em; margin-bottom: 5px; }
+            .chat-header p { font-size: 0.9em; opacity: 0.9; }
             .chat-messages {
                 flex: 1;
                 overflow-y: auto;
                 padding: 20px;
                 background: #f5f5f5;
             }
-            
             .message {
                 margin-bottom: 15px;
                 display: flex;
                 align-items: flex-start;
             }
-            
-            .message.user {
-                justify-content: flex-end;
-            }
-            
+            .message.user { justify-content: flex-end; }
             .message-content {
                 max-width: 70%;
                 padding: 10px 15px;
                 border-radius: 18px;
                 position: relative;
             }
-            
             .user .message-content {
                 background: #667eea;
                 color: white;
                 border-bottom-right-radius: 4px;
             }
-            
             .assistant .message-content {
                 background: white;
                 color: #333;
                 border: 1px solid #ddd;
                 border-bottom-left-radius: 4px;
             }
-            
             .typing-indicator {
                 display: none;
                 padding: 10px 15px;
@@ -163,7 +170,6 @@ async def get_chat():
                 border: 1px solid #ddd;
                 width: fit-content;
             }
-            
             .typing-indicator span {
                 display: inline-block;
                 width: 8px;
@@ -173,26 +179,12 @@ async def get_chat():
                 margin: 0 2px;
                 animation: typing 1.4s infinite;
             }
-            
-            .typing-indicator span:nth-child(2) {
-                animation-delay: 0.2s;
-            }
-            
-            .typing-indicator span:nth-child(3) {
-                animation-delay: 0.4s;
-            }
-            
+            .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+            .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
             @keyframes typing {
-                0%, 60%, 100% {
-                    transform: translateY(0);
-                    opacity: 0.5;
-                }
-                30% {
-                    transform: translateY(-10px);
-                    opacity: 1;
-                }
+                0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+                30% { transform: translateY(-10px); opacity: 1; }
             }
-            
             .chat-input-container {
                 padding: 20px;
                 background: white;
@@ -200,7 +192,6 @@ async def get_chat():
                 display: flex;
                 gap: 10px;
             }
-            
             .chat-input {
                 flex: 1;
                 padding: 12px;
@@ -210,11 +201,7 @@ async def get_chat():
                 outline: none;
                 transition: border-color 0.3s;
             }
-            
-            .chat-input:focus {
-                border-color: #667eea;
-            }
-            
+            .chat-input:focus { border-color: #667eea; }
             .send-button {
                 padding: 12px 24px;
                 background: #6f4e37;
@@ -225,15 +212,8 @@ async def get_chat():
                 font-size: 1em;
                 transition: background 0.3s;
             }
-            
-            .send-button:hover {
-                background: #5a3d2b;
-            }
-            
-            .send-button:disabled {
-                background: #ccc;
-                cursor: not-allowed;
-            }
+            .send-button:hover { background: #5a3d2b; }
+            .send-button:disabled { background: #ccc; cursor: not-allowed; }
         </style>
     </head>
     <body>
@@ -242,22 +222,13 @@ async def get_chat():
                 <h1>☕ Asistente de Café</h1>
                 <p>Tu experto barista personal - Pregúntame lo que quieras sobre café</p>
             </div>
-            
             <div class="chat-messages" id="chatMessages">
                 <div class="message assistant">
                     <div class="message-content">
-                        ¡Hola! Soy tu asistente experto en café. ¿En qué puedo ayudarte hoy? Puedo asesorarte sobre:
-                        <ul style="margin-top: 8px; margin-left: 20px;">
-                            <li>Tipos de granos y tostados</li>
-                            <li>Métodos de preparación</li>
-                            <li>Temperatura y molienda</li>
-                            <li>Historia y curiosidades</li>
-                            <li>Recomendaciones y marcas</li>
-                        </ul>
+                        ¡Hola! Soy tu asistente experto en café. ¿En qué puedo ayudarte hoy?
                     </div>
                 </div>
             </div>
-            
             <div class="chat-input-container">
                 <input type="text" class="chat-input" id="messageInput" placeholder="Escribe tu pregunta sobre café..." onkeypress="handleKeyPress(event)">
                 <button class="send-button" id="sendButton" onclick="sendMessage()">Enviar</button>
@@ -269,20 +240,14 @@ async def get_chat():
             const messageInput = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');
             
-            function handleKeyPress(event) {
-                if (event.key === 'Enter') {
-                    sendMessage();
-                }
-            }
+            function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
             
             function addMessage(content, isUser) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
-                
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'message-content';
                 contentDiv.innerHTML = content.replace(/\\n/g, '<br>');
-                
                 messageDiv.appendChild(contentDiv);
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -292,12 +257,10 @@ async def get_chat():
                 const typingDiv = document.createElement('div');
                 typingDiv.className = 'message assistant';
                 typingDiv.id = 'typingIndicator';
-                
                 const indicatorDiv = document.createElement('div');
                 indicatorDiv.className = 'typing-indicator';
                 indicatorDiv.innerHTML = '<span></span><span></span><span></span>';
                 indicatorDiv.style.display = 'block';
-                
                 typingDiv.appendChild(indicatorDiv);
                 chatMessages.appendChild(typingDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -305,42 +268,30 @@ async def get_chat():
             
             function removeTypingIndicator() {
                 const indicator = document.getElementById('typingIndicator');
-                if (indicator) {
-                    indicator.remove();
-                }
+                if (indicator) indicator.remove();
             }
             
             async function sendMessage() {
                 const message = messageInput.value.trim();
                 if (!message) return;
-                
                 messageInput.disabled = true;
                 sendButton.disabled = true;
-                
                 addMessage(message, true);
                 messageInput.value = '';
-                
                 showTypingIndicator();
-                
                 try {
                     const response = await fetch('/preguntar', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ mensaje: message })
                     });
-                    
                     removeTypingIndicator();
-                    
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.detail || 'Error en el servidor');
                     }
-                    
                     const data = await response.json();
                     addMessage(data.respuesta, false);
-                    
                 } catch (error) {
                     removeTypingIndicator();
                     addMessage(`❌ Error: ${error.message}`, false);
@@ -355,6 +306,3 @@ async def get_chat():
     </body>
     </html>
     """
-
-
-

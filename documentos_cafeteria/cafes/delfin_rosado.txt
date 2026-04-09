@@ -1,0 +1,14 @@
+NOMBRE: Delfín Rosado
+PAIS: Colombia
+REGION: Quindío
+PROCESO: Lavado
+VARIEDAD: Pink Bourbon
+TOSTADO: Expresso
+PERFIL: Exótico (nivel 2/3)
+SABOR: Afrutado
+NOTAS: Batido de Fresa, Miel de Limón y Plátano
+ACIDEZ: Melosa y málica
+CUERPO: Cremoso
+PUNTAJE_SCA: 88.75
+DESCRIPCION_CORTA: Café exótico de alta puntuación, notas a fresa, miel de limón y plátano.
+RECOMENDACION: Para paladares aventureros que buscan un café dulce, afrutado y complejo.

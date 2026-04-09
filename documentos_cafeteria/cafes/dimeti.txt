@@ -1,0 +1,14 @@
+NOMBRE: Dimeti
+PAIS: Etiopía
+REGION: Jima
+PROCESO: Natural
+VARIEDAD: Heirloom
+TOSTADO: Expresso
+PERFIL: Exótico (nivel 1/3)
+SABOR: Afrutado
+NOTAS: Chocolate Negro, Fresa y Naranja
+ACIDEZ: Málica, cítrica
+CUERPO: Cremoso
+PUNTAJE_SCA: 85.5
+DESCRIPCION_CORTA: Café etíope natural, notas a fresa y naranja con chocolate negro.
+RECOMENDACION: Ideal para quienes quieren probar un exótico accesible, frutal pero equilibrado.

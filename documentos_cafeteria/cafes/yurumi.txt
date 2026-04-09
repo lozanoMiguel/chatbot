@@ -1,0 +1,14 @@
+NOMBRE: Yurumi
+PAIS: Nicaragua
+REGION: Cerrado Nueva Segovia
+PROCESO: Lavado
+VARIEDAD: Catimor, Catuaí & Caturra
+TOSTADO: Expresso
+PERFIL: Tradicional (nivel 2/3)
+SABOR: Afrutado
+NOTAS: Crema de Cacao, Ciruela y Nueces
+ACIDEZ: Málica y cítrica
+CUERPO: Cremoso
+PUNTAJE_SCA: 86
+DESCRIPCION_CORTA: Café tradicional con toques afrutados (ciruela) y cacao.
+RECOMENDACION: Perfecto para quienes quieren un tradicional pero con un giro frutal.

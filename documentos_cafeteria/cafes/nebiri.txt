@@ -1,0 +1,14 @@
+NOMBRE: Nebiri
+PAIS: Etiopía
+REGION: Sidama
+PROCESO: Natural
+VARIEDAD: 74110 & 74158
+TOSTADO: Filtro
+PERFIL: Exótico (nivel 2/3)
+SABOR: Afrutado
+NOTAS: Albaricoque, Mango y Azúcar Mascabado
+ACIDEZ: Cítrica y tartárica
+CUERPO: Cremoso
+PUNTAJE_SCA: 88
+DESCRIPCION_CORTA: Café etíope natural para filtro, explosión de frutas tropicales.
+RECOMENDACION: Imprescindible para los amantes del V60 o Chemex que buscan notas jugosas.

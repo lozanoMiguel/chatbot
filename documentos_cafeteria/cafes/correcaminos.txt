@@ -1,0 +1,14 @@
+NOMBRE: Correcaminos
+PAIS: El Salvador
+REGION: Apaneca-Ilamatepec
+PROCESO: Lavado
+VARIEDAD: SL28
+TOSTADO: Filtro
+PERFIL: Exótico (nivel 2/3)
+SABOR: Afrutado
+NOTAS: Moras, Chocolate 80% y Melocotón
+ACIDEZ: Media tartárica y láctica
+CUERPO: Cremoso
+PUNTAJE_SCA: 87.5
+DESCRIPCION_CORTA: Café exótico para filtro, con notas de frutos del bosque y chocolate.
+RECOMENDACION: Para los que disfrutan cafés complejos, con acidez brillante y cuerpo sedoso.

@@ -1,0 +1,14 @@
+NOMBRE: Alacrán
+PAIS: El Salvador
+REGION: Apaneca-Ilamatepec
+PROCESO: Lavado
+VARIEDAD: Bourbon
+TOSTADO: Expresso
+PERFIL: Tradicional (nivel 2/3)
+SABOR: Achocolatado
+NOTAS: Cookie de chocolate, almendra y nectarina
+ACIDEZ: Suave
+CUERPO: Meloso
+PUNTAJE_SCA: 85
+DESCRIPCION_CORTA: Café tradicional achocolatado, acidez suave y cuerpo meloso. Ideal para espresso.
+RECOMENDACION: Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.

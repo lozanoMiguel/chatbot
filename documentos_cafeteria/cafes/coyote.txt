@@ -1,0 +1,14 @@
+NOMBRE: Coyote
+PAIS: El Salvador
+REGION: Apaneca-Ilamatepec
+PROCESO: Lavado
+VARIEDAD: SL28
+TOSTADO: Expresso
+PERFIL: Funky (nivel 3/3)
+SABOR: Licoroso
+NOTAS: Brownie, Mermelada de Melocotón y Moscatel
+ACIDEZ: Media tartárica y láctica
+CUERPO: Cremoso
+PUNTAJE_SCA: 87.75
+DESCRIPCION_CORTA: Café funky, licoroso, con notas a brownie y mermelada de melocotón.
+RECOMENDACION: Para expertos que buscan experiencias intensas y fermentadas.

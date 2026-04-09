@@ -1,0 +1,14 @@
+NOMBRE: Cóndor
+PAIS: Colombia
+REGION: Huila
+PROCESO: Lavado
+VARIEDAD: Castillo & Caturra
+TOSTADO: Expresso
+PERFIL: Tradicional (nivel 1/3)
+SABOR: Achocolatado
+NOTAS: Chocolate con leche, caramelo y frutos amarillos
+ACIDEZ: Equilibrada
+CUERPO: Jugoso
+PUNTAJE_SCA: 85.5
+DESCRIPCION_CORTA: Café tradicional suave, notas a chocolate con leche y caramelo. Muy accesible.
+RECOMENDACION: Ideal para principiantes o para quienes toman café con leche.

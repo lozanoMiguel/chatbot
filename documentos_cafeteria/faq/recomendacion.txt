@@ -1,0 +1,19 @@
+PREGUNTA: ¿Qué café me recomiendas si soy principiante?
+RESPUESTA: Prueba un Tradicional nivel 1/3 como Cóndor (Colombia, notas chocolate con leche y caramelo) o Lince (Brasil, chocolate y nueces). Ambos son muy equilibrados.
+
+PREGUNTA: ¿Cuál es el café más ácido y afrutado?
+RESPUESTA: Los Exóticos, especialmente Delfín Rosado (notas a fresa, miel de limón) o Nebiri (albaricoque, mango). También Correcaminos (moras, melocotón).
+
+PREGUNTA: ¿Cuál es el café más intenso y licoroso?
+RESPUESTA: Coyote, nuestro único Funky. Notas a brownie, mermelada de melocotón y moscatel. Para paladares atrevidos.
+
+PREGUNTA: ¿Qué café es mejor para espresso con leche?
+RESPUESTA: Los Tradicionales achocolatados como Alacrán, Cóndor o Lince. Su perfil combina perfectamente con la leche.
+
+PREGUNTA: ¿Recomiéndame un café para filtro?
+RESPUESTA: Correcaminos (El Salvador, notas a moras y chocolate) o Nebiri (Etiopía, notas a albaricoque y mango). Ambos tostados filtro.
+
+PREGUNTA: ¿Qué diferencia hay entre un café Exótico y un Funky?
+RESPUESTA: El Exótico tiene sabores frutales frescos (fresa, mango, mora). El Funky tiene sabores fermentados, como vino, frutas maduras o mermelada. El Funky es más intenso y complejo.
+
+gpt-4.1-mini
