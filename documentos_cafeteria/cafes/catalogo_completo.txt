@@ -1,0 +1,12 @@
+LISTA COMPLETA DE TODOS LOS CAFÉS DISPONIBLES (10 productos):
+
+1. Alacrán - El Salvador - Tradicional - Expresso - Notas: chocolate, almendra
+2. Cóndor - Colombia - Tradicional - Expresso - Notas: chocolate con leche, caramelo
+3. Lince - Brasil - Tradicional - Expresso - Notas: chocolate, nueces
+4. Yurumi - Nicaragua - Tradicional - Expresso - Notas: crema de cacao, ciruela
+5. Correcaminos - El Salvador - Exótico - Filtro - Notas: moras, chocolate 80%
+6. Dimeti - Etiopía - Exótico - Expresso - Notas: chocolate negro, fresa
+7. Delfín Rosado - Colombia - Exótico - Expresso - Notas: batido de fresa, miel de limón
+8. Puma - El Salvador - Exótico - Expresso - Notas: ciruela pasa, avellanas
+9. Nebiri - Etiopía - Exótico - Filtro - Notas: albaricoque, mango
+10. Coyote - El Salvador - Funky - Expresso - Notas: brownie, mermelada de melocotón
