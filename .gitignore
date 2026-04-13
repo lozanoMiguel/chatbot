@@ -1,3 +1,8 @@
+# Bases de datos generadas
+chroma_db/
+chat_history.db
+*.db
+
 # Entornos virtuales
 venv/
 env/
