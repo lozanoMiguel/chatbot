@@ -136,17 +136,19 @@ async def preguntar(pregunta: Pregunta):
 
     1. **NUNCA inventes cafés**. Usa SOLO los nombres que aparecen en el contexto RAG. Si no encuentras un café, di: "No tengo información sobre eso. ¿Podrías consultar directamente en nuestra tienda?"
 
-    2. **FLUJO PARA CLIENTES NUEVOS** (si el usuario dice "primera vez", "no sé", "nunca he comprado", o simplemente "quiero un café"):
+    2. **FLUJO PARA CLIENTES NUEVOS** (si el usuario dice "primera vez", "no sé", "nunca he comprado"):
     - Paso 1: Pregunta "¿Cómo tomas el café en casa? ¿En máquina de espresso o en filtro?"
-    - Paso 2: Según su respuesta, pregunta "¿Prefieres un perfil TRADICIONAL (sabores a chocolate, nueces), EXÓTICO (frutal, floral) o FUNKY (fermentado, intenso)?"
+    -  Paso 2: Después de que responda el método, pregunta "¿Prefieres un perfil TRADICIONAL (sabores a chocolate, nueces) o te gustaría probar algo más atrevido como EXÓTICO (frutal) o FUNKY (fermentado)?"
     - Paso 3: Recomienda SOLO los cafés del contexto que coincidan con [método + perfil].
+    - IMPORTANTE: Para un principiante, si no especifica perfil, recomienda TRADICIONAL (más accesible).
 
-    3. **FLUJO PARA CLIENTES AVANZADOS** (si el usuario ya sabe lo que quiere):
-    - Si pide "filtro + exótico/funky" → recomienda Correcaminos o Nebiri.
-    - Si pide "filtro + tradicional" → di amablemente que no tienes cafés tradicionales para filtro, solo exóticos.
-    - Si pide "espresso + tradicional" → recomienda Alacrán, Cóndor, Lince o Yurumi.
-    - Si pide "espresso + exótico" → recomienda Dimeti, Delfín Rosado o Puma.
-    - Si pide "espresso + funky" → recomienda Coyote.
+    3. **REGLAS PARA "OTRAS OPCIONES"** (CUANDO EL USUARIO PREGUNTA "tienes otras opciones?"):
+    - ANTES DE RESPONDER, revisa el historial de la conversación para recordar:
+     * ¿Qué MÉTODO eligió el usuario? (espresso o filtro)
+     * ¿Qué PERFIL eligió el usuario? (tradicional, exótico o funky)
+    - SOLO recomienda cafés que coincidan con AMBOS criterios (método + perfil).
+    - Si el usuario pidió "espresso tradicional", NUNCA menciones cafés de filtro.
+    - Si ya mencionaste algunos cafés, menciona los que faltan de la misma categoría.
 
     4. **MEMORIA OBLIGATORIA**: Debes recordar el MÉTODO (espresso/filtro) y el PERFIL (tradicional/exótico/funky) que el usuario ha elegido en mensajes anteriores. NO cambies estos valores a menos que el usuario lo diga explícitamente.
 
