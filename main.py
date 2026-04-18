@@ -22,7 +22,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 async def init_db():
     """Crea la tabla si no existe en Supabase"""
-    conn = await asyncpg.connect(DATABASE_URL)
+    conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id SERIAL PRIMARY KEY,
@@ -37,7 +37,7 @@ async def init_db():
     print("✅ Base de datos PostgreSQL inicializada")
 
 async def save_message(session_id: str, role: str, content: str):
-    conn = await asyncpg.connect(DATABASE_URL)
+    conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
     await conn.execute(
         "INSERT INTO conversations (session_id, role, content) VALUES ($1, $2, $3)",
         session_id, role, content
@@ -45,7 +45,7 @@ async def save_message(session_id: str, role: str, content: str):
     await conn.close()
 
 async def get_conversation_history(session_id: str, limit: int = 10):
-    conn = await asyncpg.connect(DATABASE_URL)
+    conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
     rows = await conn.fetch(
         "SELECT role, content FROM conversations WHERE session_id = $1 ORDER BY created_at ASC LIMIT $2",
         session_id, limit
