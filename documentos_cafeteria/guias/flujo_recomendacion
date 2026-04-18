@@ -1,0 +1,16 @@
+FLUJO DE RECOMENDACIÓN PARA EL ASISTENTE:
+
+1. Método (espresso o filtro) → 2. Perfil (tradicional/exótico/funky) → 3. Café específico
+
+MATRIZ DE RECOMENDACIÓN:
+
+| Método   | Perfil        | Cafés disponibles                          |
+|----------|---------------|--------------------------------------------|
+| Espresso | Tradicional   | Alacrán, Cóndor, Lince, Yurumi             |
+| Espresso | Exótico       | Dimeti, Delfín Rosado, Puma                |
+| Espresso | Funky         | Coyote                                     |
+| Filtro   | Tradicional   | (No hay disponibles)                       |
+| Filtro   | Exótico       | Correcaminos, Nebiri                       |
+| Filtro   | Funky         | (No hay disponibles)                       |
+
+Si un cliente pide una combinación que no existe, explica amablemente que no la tenemos y sugiere la combinación más cercana.

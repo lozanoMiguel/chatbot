@@ -37,5 +37,4 @@ vectorstore = Chroma.from_documents(
     embedding=embeddings,
     persist_directory="./chroma_db"
 )
-vectorstore.persist()
 print("✅ Índice RAG guardado en ./chroma_db")

@@ -16,4 +16,11 @@ RESPUESTA: Correcaminos (El Salvador, notas a moras y chocolate) o Nebiri (Etiop
 PREGUNTA: ¿Qué diferencia hay entre un café Exótico y un Funky?
 RESPUESTA: El Exótico tiene sabores frutales frescos (fresa, mango, mora). El Funky tiene sabores fermentados, como vino, frutas maduras o mermelada. El Funky es más intenso y complejo.
 
-gpt-4.1-mini
+PREGUNTA: ¿Tienen café tradicional para filtro?
+RESPUESTA: Actualmente no tenemos cafés tradicionales para filtro. Nuestros cafés para filtro son Correcaminos y Nebiri, ambos con perfil exótico.
+
+PREGUNTA: ¿Tienen café funky para filtro?
+RESPUESTA: No, nuestro único café funky (Coyote) está tostado para espresso.
+
+PREGUNTA: ¿Cuántos cafés exóticos tienen para espresso?
+RESPUESTA: Tenemos tres: Dimeti (Etiopía), Delfín Rosado (Colombia) y Puma (El Salvador).
