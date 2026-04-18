@@ -1,3 +1,6 @@
+import sys
+import pysqlite3
+sys.modules['sqlite3'] = pysqlite3
 import glob
 from dotenv import load_dotenv
 from langchain_community.document_loaders import TextLoader

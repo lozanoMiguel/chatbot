@@ -1,3 +1,6 @@
+import sys
+import pysqlite3
+sys.modules['sqlite3'] = pysqlite3
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -7,11 +10,13 @@ import asyncpg
 import os
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
+from chromadb.config import Settings
 from langchain_openai import OpenAIEmbeddings
 import aiosqlite
 from contextlib import asynccontextmanager
 
 # ==================== BASE DE DATOS ====================
+load_dotenv()
 DATABASE_PATH = "chat_history.db"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -59,12 +64,17 @@ async def lifespan(app: FastAPI):
     print("🛑 Cerrando conexiones...")
 
 # ==================== CONFIGURACIÓN ====================
-load_dotenv()
+
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 embeddings = OpenAIEmbeddings()
-vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+vectorstore = Chroma(
+    persist_directory="./chroma_db",
+    embedding_function=embeddings,
+    collection_metadata={"hnsw:space": "cosine"},
+    client_settings=Settings(anonymized_telemetry=False, is_persistent=True)
+)
 
 # ==================== APP ====================
 app = FastAPI(
