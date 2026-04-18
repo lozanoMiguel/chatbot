@@ -25,3 +25,5 @@ source venv/bin/activate  # o .\venv\Scripts\activate en Windows
 pip install -r requirements.txt
 python indexar_documentos.py  # crear índice RAG
 uvicorn main:app --reload
+
+ **Prueba el asistente en vivo**: [https://chatbot-180426.onrender.com](https://chatbot-180426.onrender.com)
