@@ -84,6 +84,9 @@ class Pregunta(BaseModel):
 
 class Respuesta(BaseModel):
     respuesta: str
+    
+class ChatRequest(BaseModel):
+    message: str
 
 # ==================== FUNCIONES RAG ====================
 def buscar_contexto(pregunta: str) -> str:
@@ -382,3 +385,21 @@ async def get_chat():
     </script>
 </body>
 </html>"""
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    # 1. Obtener el mensaje del usuario
+    user_message = request.message
+
+    # 2. ¡Aquí usamos la lógica que ya tienes!
+    #    Obtenemos el contexto relevante y generamos la respuesta.
+    contexto = buscar_contexto(user_message)
+    # ... (aquí iría toda la lógica para construir el prompt y llamar a OpenAI)
+    # ... (debes integrar el código de tu función 'preguntar' aquí)
+
+    # 3. Por ahora, para probar, devolveremos un mensaje simple.
+    #    Luego lo reemplazarás con la respuesta real de tu bot.
+    respuesta_del_bot = f"Recibí tu mensaje: '{user_message}'. ¡Pronto te daré una recomendación de café!"
+
+    # 4. Devolver la respuesta en el formato que espera la API
+    return {"response": respuesta_del_bot}
