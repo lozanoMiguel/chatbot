@@ -1,0 +1,19 @@
+LISTA COMPLETA DE TODOS LOS CAFÉS POR CATEGORÍA:
+
+CAFÉS TRADICIONALES PARA ESPRESSO:
+- Alacrán (El Salvador): notas de cookie de chocolate, almendra, nectarina
+- Cóndor (Colombia): notas de chocolate con leche, caramelo, frutos amarillos
+- Lince (Brasil): notas de chocolate, nueces, uva roja
+- Yurumi (Nicaragua): notas de crema de cacao, ciruela, nueces
+
+CAFÉS EXÓTICOS PARA ESPRESSO:
+- Dimeti (Etiopía): notas de chocolate negro, fresa, naranja
+- Delfín Rosado (Colombia): notas de batido de fresa, miel de limón, plátano
+- Puma (El Salvador): notas de ciruela pasa, crema de avellanas, chocolate negro
+
+CAFÉS EXÓTICOS PARA FILTRO:
+- Correcaminos (El Salvador): notas de moras, chocolate 80%, melocotón
+- Nebiri (Etiopía): notas de albaricoque, mango, azúcar mascabado
+
+CAFÉ FUNKY PARA ESPRESSO:
+- Coyote (El Salvador): notas de brownie, mermelada de melocotón, moscatel

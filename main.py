@@ -103,7 +103,7 @@ class ChatRequest(BaseModel):
 
 # ==================== FUNCIONES RAG ====================
 def buscar_contexto(pregunta: str) -> str:
-    docs = vectorstore.similarity_search(pregunta, k=10)
+    docs = vectorstore.similarity_search(pregunta, k=15)
     contexto = "\n\n".join([doc.page_content for doc in docs])
     return contexto
 
@@ -168,7 +168,7 @@ async def preguntar(pregunta: Pregunta):
             model="gpt-3.5-turbo",  # o "gpt-4o-mini" si quieres
             messages=messages,
             max_tokens=600,
-            temperature=0.5
+            temperature=0.2
         )
 
         respuesta_texto = completion.choices[0].message.content
