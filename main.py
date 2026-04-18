@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from openai import OpenAI
+import asyncpg
 import os
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
@@ -12,38 +13,40 @@ from contextlib import asynccontextmanager
 
 # ==================== BASE DE DATOS ====================
 DATABASE_PATH = "chat_history.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 async def init_db():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS conversations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        await db.commit()
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
-        await db.commit()
+    """Crea la tabla si no existe en Supabase"""
+    conn = await asyncpg.connect(DATABASE_URL)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id SERIAL PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
+    await conn.close()
+    print("✅ Base de datos PostgreSQL inicializada")
 
 async def save_message(session_id: str, role: str, content: str):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            "INSERT INTO conversations (session_id, role, content) VALUES (?, ?, ?)",
-            (session_id, role, content)
-        )
-        await db.commit()
+    conn = await asyncpg.connect(DATABASE_URL)
+    await conn.execute(
+        "INSERT INTO conversations (session_id, role, content) VALUES ($1, $2, $3)",
+        session_id, role, content
+    )
+    await conn.close()
 
 async def get_conversation_history(session_id: str, limit: int = 10):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute(
-            "SELECT role, content FROM conversations WHERE session_id = ? ORDER BY created_at ASC LIMIT ?",
-            (session_id, limit)
-        ) as cursor:
-            rows = await cursor.fetchall()
-            return [{"role": row[0], "content": row[1]} for row in rows]
+    conn = await asyncpg.connect(DATABASE_URL)
+    rows = await conn.fetch(
+        "SELECT role, content FROM conversations WHERE session_id = $1 ORDER BY created_at ASC LIMIT $2",
+        session_id, limit
+    )
+    await conn.close()
+    return [{"role": row["role"], "content": row["content"]} for row in rows]
 
 # ==================== LIFESPAN ====================
 @asynccontextmanager
