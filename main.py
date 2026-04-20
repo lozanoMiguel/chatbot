@@ -14,7 +14,140 @@ from chromadb.config import Settings
 from langchain_openai import OpenAIEmbeddings
 import aiosqlite
 from contextlib import asynccontextmanager
+import json
+from typing import Literal
 
+# ==================== FUNCIONES PARA TOOL CALLING ====================
+
+def recomendar_cafe(metodo: Literal["espresso", "filtro"], perfil: Literal["tradicional", "exotico", "funky"]) -> str:
+    """
+    Recomienda un café basado en el método y perfil elegidos por el usuario.
+    Esta función es llamada por el modelo cuando detecta que el usuario quiere una recomendación.
+    """
+    # Matriz de recomendación (solo cafés reales)
+    matriz = {
+        ("espresso", "tradicional"): ["Alacrán", "Cóndor", "Lince", "Yurumi"],
+        ("espresso", "exotico"): ["Dimeti", "Delfín Rosado", "Puma"],
+        ("espresso", "funky"): ["Coyote"],
+        ("filtro", "tradicional"): [],  # No hay
+        ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
+        ("filtro", "funky"): [],  # No hay
+    }
+    
+    cafes = matriz.get((metodo, perfil), [])
+    
+    if not cafes:
+        return f"No tenemos cafés {perfil} para {metodo}. ¿Te gustaría probar otro perfil?"
+    
+    if len(cafes) == 1:
+        return f"Para {metodo} y perfil {perfil}, te recomiendo {cafes[0]}. Es una excelente elección."
+    
+    return f"Para {metodo} y perfil {perfil}, te recomiendo: {', '.join(cafes[:-1])} y {cafes[-1]}."
+
+def preguntar_metodo() -> str:
+    """Pregunta al usuario cómo toma el café"""
+    return "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+
+def preguntar_perfil() -> str:
+    """Pregunta al usuario qué perfil de sabor prefiere"""
+    return "¿Qué perfil de sabor te gusta más: TRADICIONAL (chocolate, nueces), EXÓTICO (frutas, flores) o FUNKY (fermentado, intenso)?"
+
+def explicar_perfiles() -> str:
+    """Explica los diferentes perfiles de café"""
+    return """
+    **Perfiles de café:**
+    - **TRADICIONAL**: Sabores clásicos como chocolate, nueces y caramelo. Acidez suave.
+    - **EXÓTICO**: Sabores frutales como fresa, mango, mora. Acidez brillante.
+    - **FUNKY**: Sabores fermentados, licorosos, frutas maduras. Intenso y complejo.
+    """
+
+def manejar_saludo() -> str:
+    """Respuesta de bienvenida"""
+    return "¡Hola! Soy tu asistente experto en café. ¿En qué puedo ayudarte hoy?"
+
+def manejar_despedida() -> str:
+    """Respuesta de despedida"""
+    return "¡Gracias por consultarnos! Vuelve cuando quieras más café ☕"
+
+def respuesta_generica() -> str:
+    """Respuesta para cuando no hay una función específica"""
+    return "No entendí tu consulta. ¿Te gustaría que te ayude a elegir un café?"
+
+# ==================== DEFINICIÓN DE TOOLS PARA OPENAI ====================
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "recomendar_cafe",
+            "description": "Recomienda un café específico basado en el método de preparación y el perfil de sabor que prefiere el usuario.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "metodo": {
+                        "type": "string",
+                        "enum": ["espresso", "filtro"],
+                        "description": "El método de preparación que usa el cliente"
+                    },
+                    "perfil": {
+                        "type": "string",
+                        "enum": ["tradicional", "exotico", "funky"],
+                        "description": "El perfil de sabor que prefiere el cliente"
+                    }
+                },
+                "required": ["metodo", "perfil"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "preguntar_metodo",
+            "description": "Pregunta al usuario cómo toma su café (espresso o filtro)",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "preguntar_perfil",
+            "description": "Pregunta al usuario qué perfil de sabor prefiere (tradicional, exótico, funky)",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "explicar_perfiles",
+            "description": "Explica la diferencia entre los perfiles tradicional, exótico y funky",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "manejar_saludo",
+            "description": "Responde a un saludo del usuario (hola, buenos días, etc.)",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "manejar_despedida",
+            "description": "Responde a una despedida del usuario (adiós, chao, hasta luego)",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "respuesta_generica",
+            "description": "Respuesta genérica para cuando el mensaje del usuario no corresponde a ninguna otra función",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    }
+]
 # ==================== BASE DE DATOS ====================
 load_dotenv()
 DATABASE_PATH = "chat_history.db"
