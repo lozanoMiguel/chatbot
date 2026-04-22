@@ -241,8 +241,95 @@ def buscar_contexto(pregunta: str) -> str:
     return contexto
 
 # ==================== ENDPOINTS ====================
+
 @app.post("/preguntar", response_model=Respuesta)
 async def preguntar(pregunta: Pregunta):
+    session_id = pregunta.session_id
+    user_message = pregunta.mensaje
+    
+    try:
+        # Guardar mensaje del usuario
+        await save_message(session_id, "user", user_message)
+        
+        # Obtener contexto RAG (para que el modelo tenga información de los cafés)
+        contexto = buscar_contexto(user_message)
+        
+        # Obtener historial de la conversación
+        historial = await get_conversation_history(session_id, limit=10)
+        
+        # Construir el system prompt (sin reglas de comportamiento, ahora las funciones se encargan)
+        system_prompt = f"""
+Eres "CafBot", un asistente de ventas experto en café. Tu trabajo es ayudar al cliente a elegir el café perfecto.
+
+INFORMACIÓN DE LOS CAFÉS (contexto RAG):
+{contexto}
+
+REGLAS IMPORTANTES:
+1. Para RECOMENDAR un café, usa la función `recomendar_cafe` con los parámetros método y perfil.
+2. Para Preguntar el método, usa `preguntar_metodo`.
+3. Para Preguntar el perfil, usa `preguntar_perfil`.
+4. Para Explicar los perfiles, usa `explicar_perfiles`.
+5. Para Saludar o Despedir, usa `manejar_saludo` o `manejar_despedida`.
+6. Si no sabes qué hacer, usa `respuesta_generica`.
+"""
+        
+        # Construir la lista de mensajes para OpenAI
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(historial)
+        messages.append({"role": "user", "content": user_message})
+        
+        # Llamar a OpenAI con tools
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",  # El modelo decide qué función usar
+            temperature=0.2
+        )
+        
+        # Procesar la respuesta del modelo
+        message = response.choices[0].message
+        
+        # Verificar si el modelo quiere llamar a una función
+        if message.tool_calls:
+            # Tomar la primera función (simplificado)
+            tool_call = message.tool_calls[0]
+            function_name = tool_call.function.name
+            function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+            
+            # Mapeo de nombres de función a funciones reales
+            available_functions = {
+                "recomendar_cafe": recomendar_cafe,
+                "preguntar_metodo": preguntar_metodo,
+                "preguntar_perfil": preguntar_perfil,
+                "explicar_perfiles": explicar_perfiles,
+                "manejar_saludo": manejar_saludo,
+                "manejar_despedida": manejar_despedida,
+                "respuesta_generica": respuesta_generica,
+            }
+            
+            # Ejecutar la función correspondiente
+            function_to_call = available_functions.get(function_name)
+            if function_to_call:
+                # Pasar argumentos si la función los requiere
+                if function_args:
+                    respuesta_texto = function_to_call(**function_args)
+                else:
+                    respuesta_texto = function_to_call()
+            else:
+                respuesta_texto = respuesta_generica()
+        else:
+            # Si el modelo responde directamente (sin función), usamos eso
+            respuesta_texto = message.content
+        
+        # Guardar respuesta del asistente
+        await save_message(session_id, "assistant", respuesta_texto)
+        
+        return Respuesta(respuesta=respuesta_texto)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
     try:
         session_id = pregunta.session_id
         user_message = pregunta.mensaje
