@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from openai import OpenAI
+import unicodedata
+import re
 
 from app.config import OPENAI_API_KEY
 from app.database import init_db, save_message, get_conversation_history
@@ -23,6 +25,31 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 estado_usuario = defaultdict(lambda: {"metodo": None, "perfil": None})
 
 # ==================== FUNCIONES DE RECOMENDACIÓN ====================
+def normalizar_texto(texto: str) -> str:
+    """
+    Normaliza el texto: minúsculas, sin acentos, sin caracteres especiales.
+    
+    Ejemplos:
+        "¿Cómo tomas tu café?" → "como tomas tu cafe"
+        "¡Hola! ¿Qué tal?" → "hola que tal"
+        "Té o café?" → "te o cafe"
+    """
+    # 1. Convertir a minúsculas
+    texto = texto.lower()
+    
+    # 2. Eliminar acentos (normalizar a forma ASCII)
+    #    'café' → 'cafe', 'té' → 'te', 'más' → 'mas'
+    texto = unicodedata.normalize('NFKD', texto)
+    texto = texto.encode('ASCII', 'ignore').decode('ASCII')
+    
+    # 3. Eliminar signos de puntuación y caracteres especiales
+    #    Solo mantenemos letras, números y espacios
+    texto = re.sub(r'[^a-z0-9\s]', '', texto)
+    
+    # 4. Eliminar espacios múltiples y trim
+    texto = re.sub(r'\s+', ' ', texto).strip()
+    
+    return texto
 def recomendar_cafe(metodo: str, perfil: str) -> str:
     """Recomienda cafés según método y perfil"""
     matriz = {
@@ -40,6 +67,56 @@ def recomendar_cafe(metodo: str, perfil: str) -> str:
     else:
         return f"Para {metodo} y perfil {perfil}, te recomiendo: {', '.join(cafes[:-1])} y {cafes[-1]}."
 
+def clasificar_intencion(mensaje: str) -> str:
+    """
+    Clasifica la intención del usuario.
+    Retorna: 'compra', 'descripcion', 'info_general' o 'otro'
+    """
+    user_lower = normalizar_texto(mensaje)
+    
+    # Intenciones que usan IA
+    if any(phrase in user_lower for phrase in [
+        "describeme", "describime","qué notas tiene", "contame sobre", "que significa",
+        "de dónde es", "origen", "diferencia entre", "cuéntame más",
+        "explicame","explicarme" "como se prepara","que perfil"
+    ]):
+        return "ia_descripcion"
+    
+    if user_lower in ["hola", "buenos dias", "buenas tardes", "gracias", "adios"]:
+        return "simple_saludo"
+    
+    frases_recordatorio = [
+        "que metodo", "que perfil", "que elegi", "como tomo el cafe",
+        "que me recomendaste", "cual fue mi eleccion", "que habia elegido"
+    ]
+    if any(phrase in user_lower for phrase in frases_recordatorio):
+        return "pregunta_recordatorio"
+    
+    # Intenciones que usan lógica dura
+    if any(phrase in user_lower for phrase in [
+        "quiero comprar", "quiero un cafe", "recomienda", "cafe por favor"
+    ]):
+        return "logica_compra"
+    
+    if any(word in user_lower for word in ["espresso", "filtro", "tradicional", "exotico", "funky"]):
+        return "logica_compra"
+    
+    return "logica_compra"  # por defecto
+
+def actualizar_estado_desde_mensaje(session_id: str, mensaje: str):
+    """Actualiza el estado de la conversación basado en el mensaje"""
+    
+    if "espresso" in mensaje or "espreso" in mensaje:
+        estado_usuario[session_id]["metodo"] = "espresso"
+    elif "filtro" in mensaje:
+        estado_usuario[session_id]["metodo"] = "filtro"
+    
+    if "tradicional" in mensaje:
+        estado_usuario[session_id]["perfil"] = "tradicional"
+    elif "exotico" in mensaje or "afrutado" in mensaje:
+        estado_usuario[session_id]["perfil"] = "exotico"
+    elif "funky" in mensaje:
+        estado_usuario[session_id]["perfil"] = "funky"
 # ==================== LIFESPAN ====================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -69,67 +146,83 @@ async def preguntar(pregunta: Pregunta):
     print(f"\n📨 [{session_id[:8]}] Usuario: {user_message}")
     
     try:
-        # Guardar mensaje del usuario
         await save_message(session_id, "user", user_message)
         
-        # ========== ACTUALIZAR ESTADO ==========
         user_lower = user_message.lower()
         
-        # Detectar método
-        if "espresso" in user_lower or "espreso" in user_lower:
-            estado_usuario[session_id]["metodo"] = "espresso"
-            print(f"   ✅ Método: espresso")
-        elif "filtro" in user_lower:
-            estado_usuario[session_id]["metodo"] = "filtro"
-            print(f"   ✅ Método: filtro")
+        # ========== CLASIFICAR INTENCIÓN ==========
+        intencion = clasificar_intencion(user_lower)
+        print(f"   🧠 Intención detectada: {intencion}")
         
-        # Detectar perfil
-        if "tradicional" in user_lower:
-            estado_usuario[session_id]["perfil"] = "tradicional"
-            print(f"   ✅ Perfil: tradicional")
-        elif "exotico" in user_lower or "afrutado" in user_lower:
-            estado_usuario[session_id]["perfil"] = "exotico"
-            print(f"   ✅ Perfil: exotico")
-        elif "funky" in user_lower:
-            estado_usuario[session_id]["perfil"] = "funky"
-            print(f"   ✅ Perfil: funky")
-        
-        estado = estado_usuario[session_id]
-        print(f"   📊 Estado: método={estado['metodo']}, perfil={estado['perfil']}")
-        
-        # ========== GENERAR RESPUESTA ==========
-        respuesta_texto = None
-        
-        # Caso: Quiere explicación de perfiles
-        if any(phrase in user_lower for phrase in ["explicame", "qué significa", "que son los perfiles"]):
-            respuesta_texto = """
-**Perfiles de café:**
-- **TRADICIONAL**: Sabores clásicos como chocolate, nueces y caramelo. Acidez suave.
-- **EXÓTICO**: Sabores frutales como fresa, mango, mora. Acidez brillante.
-- **FUNKY**: Sabores fermentados, licorosos, frutas maduras. Intenso y complejo.
+        # ========== RUTA 1: IA para descripciones ==========
+        if intencion == "ia_descripcion":
+            print(f"   🤖 Usando IA + RAG")
+            contexto = buscar_contexto(user_message)
+            
+            system_prompt = f"""
+Eres un experto barista. Usa SOLO el siguiente contexto para responder.
+Si la respuesta no está en el contexto, di: "No tengo información sobre eso. ¿Quieres que te ayude a elegir un café?"
 
-¿Cuál de estos te gustaría probar?
+CONTEXTO: {contexto}
 """
-        # Caso: No tiene método
-        elif not estado["metodo"]:
-            respuesta_texto = "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ]
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.3,
+                max_tokens=300
+            )
+            respuesta_texto = response.choices[0].message.content
+            
+            if intencion == "pregunta_recordatorio":
+                estado = estado_usuario[session_id]
         
-        # Caso: Tiene método pero no perfil
-        elif estado["metodo"] and not estado["perfil"]:
-            respuesta_texto = f"Para café en {estado['metodo']}, ¿qué perfil te gusta? TRADICIONAL, EXÓTICO o FUNKY?"
+            if estado["metodo"] and estado["perfil"]:
+                respuesta_texto = f"Según nuestra conversación, elegiste café en {estado['metodo']} con perfil {estado['perfil']}. ¿Te gustaría probar algún café de esta combinación?"
+            elif estado["metodo"] and not estado["perfil"]:
+                respuesta_texto = f"Elegiste café en {estado['metodo']}, pero aún no me has dicho qué perfil prefieres. ¿Tradicional, exótico o funky?"
+            elif not estado["metodo"]:
+                respuesta_texto = "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
+            else:
+                respuesta_texto = "No tengo información sobre tu elección anterior. ¿Quieres que te ayude a elegir un café?"
         
-        # Caso: Tiene método y perfil -> recomendar
-        else:
-            respuesta_texto = recomendar_cafe(estado["metodo"], estado["perfil"])
-            # No reseteamos el estado para que pueda preguntar "otras opciones" después
+        # ========== RUTA 2: Saludos simples (sin estado) ==========
+        elif intencion == "simple_saludo":
+            if "hola" in user_lower or "buenos" in user_lower:
+                respuesta_texto = "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+            elif "gracias" in user_lower:
+                respuesta_texto = "¡De nada! ¿Hay algo más en lo que pueda ayudarte? ☕"
+            elif "adiós" in user_lower or "chao" in user_lower:
+                respuesta_texto = "¡Gracias por consultarnos! Vuelve cuando quieras más café ☕"
+            else:
+                respuesta_texto = "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
         
-        # Fallback
-        if not respuesta_texto:
-            respuesta_texto = "No entendí tu consulta. ¿Te gustaría que te ayude a elegir un café?"
+        # ========== RUTA 3: Lógica dura para compras ==========
+        else:  # logica_compra
+            print(f"   💻 Usando lógica dura")
+            
+            # Actualizar estado
+            actualizar_estado_desde_mensaje(session_id, user_lower)
+            estado = estado_usuario[session_id]
+            print(f"   📊 Estado: método={estado['metodo']}, perfil={estado['perfil']}")
+            
+            # Generar respuesta según estado
+            if not estado["metodo"]:
+                respuesta_texto = "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+            
+            elif estado["metodo"] and not estado["perfil"]:
+                respuesta_texto = f"Para café en {estado['metodo']}, ¿qué perfil te gusta? tradicional, exotico o funky?"
+            
+            else:
+                respuesta_texto = recomendar_cafe(estado["metodo"], estado["perfil"])
         
-        # Guardar respuesta
+        # Guardar y devolver
         await save_message(session_id, "assistant", respuesta_texto)
-        print(f"   🤖 Respuesta: {respuesta_texto[:100]}...")
+        print(f"   💬 Respuesta: {respuesta_texto[:80]}...")
         
         return Respuesta(respuesta=respuesta_texto)
         
