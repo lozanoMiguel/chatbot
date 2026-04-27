@@ -1,6 +1,7 @@
 import sys
 import pysqlite3
 sys.modules['sqlite3'] = pysqlite3
+
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from app.config import VECTOR_STORE_PATH, RAG_K_FRAGMENTS
