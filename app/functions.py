@@ -1,5 +1,10 @@
 import unicodedata
 import re
+from openai import OpenAI
+from app.config import OPENAI_API_KEY
+
+# Cliente OpenAI (reutilizamos el mismo)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     """Recomienda cafés según método y perfil, y opcionalmente guarda la lista en el estado"""
@@ -22,25 +27,6 @@ def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
         return f"Para {metodo} y perfil {perfil}, te recomiendo {cafes[0]}. ¡Es una excelente elección!"
     else:
         return f"Para {metodo} y perfil {perfil}, te recomiendo: {', '.join(cafes[:-1])} y {cafes[-1]}."
-
-def preguntar_metodo() -> str:
-    return "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
-
-def preguntar_perfil(metodo: str = None) -> str:
-    if metodo:
-        return f"Para café en {metodo}, ¿qué perfil de sabor te gusta más: TRADICIONAL (chocolate, nueces), EXÓTICO (frutas, flores) o FUNKY (fermentado, intenso)?"
-    return "¿Qué perfil de sabor te gusta más: TRADICIONAL, EXÓTICO o FUNKY?"
-
-def explicar_perfiles() -> str:
-    return """
-        **Perfiles de café:**
-        - **TRADICIONAL**: Sabores clásicos como chocolate, nueces y caramelo. Acidez suave.
-        - **EXÓTICO**: Sabores frutales como fresa, mango, mora. Acidez brillante.
-        - **FUNKY**: Sabores fermentados, licorosos, frutas maduras. Intenso y complejo.
-        """
-
-
-    return "No entendí tu consulta. ¿Te gustaría que te ayude a elegir un café?"
 
 def normalizar_texto(texto: str) -> str:
     """
@@ -68,42 +54,74 @@ def normalizar_texto(texto: str) -> str:
     
     return texto
 
-def clasificar_intencion(mensaje: str) -> str:
+def clasificar_intencion_simple(mensaje: str) -> str:
     """
-    Clasifica la intención del usuario.
-    Retorna: 'compra', 'descripcion', 'info_general' o 'otro'
+    Clasifica usando reglas simples (rápido y gratuito).
+    Retorna: 'logica_compra', 'simple_saludo', 'pregunta_recordatorio', o None si no está claro
     """
-    user_lower = normalizar_texto(mensaje)
+    user_norm = normalizar_texto(mensaje)
     
-    # Intenciones que usan IA
-    if any(phrase in user_lower for phrase in [
-        "describeme", "describime","qué notas tiene", "contame sobre", "que significa",
-        "de dónde es", "origen", "diferencia entre", "cuéntame más",
-        "explicame","explicarme" "como se prepara","que perfil"
-    ]):
-        return "ia_descripcion"
-    
-    if any(word in user_lower for word in ["hola", "buenos dias", "buenas tardes"]):
+    # ===== SALUDOS Y AGRADECIMIENTOS =====
+    if "gracias" in user_norm:
         return "simple_saludo"
-    if "gracias" in user_lower or "graciass" in user_lower:
+    if any(word in user_norm for word in ["adios", "chao", "hasta luego", "bye"]):
         return "simple_saludo"
-    if any(word in user_lower for word in ["adios", "chao", "hasta luego", "nos vemos", "bye"]):
+    if user_norm in ["hola", "buenos dias", "buenas tardes", "buenas noches"]:
         return "simple_saludo"
     
-    frases_recordatorio = [
-        "que metodo", "que perfil", "que elegi", "como tomo el cafe",
-        "que me recomendaste", "cual fue mi eleccion", "que habia elegido"
-    ]
-    if any(phrase in user_lower for phrase in frases_recordatorio):
+    # ===== PALABRAS CLARAS DE COMPRA =====
+    if any(phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "recomienda", "cafe por favor"]):
+        return "logica_compra"
+    
+    # ===== PALABRAS CLARAS DE RECORDATORIO =====
+    if any(phrase in user_norm for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]):
         return "pregunta_recordatorio"
     
-    # Intenciones que usan lógica dura
-    if any(phrase in user_lower for phrase in [
-        "quiero comprar", "quiero un cafe", "recomienda", "cafe por favor"
-    ]):
-        return "logica_compra"
+    # ===== SI EL MENSAJE ES MUY CORTO (posible respuesta a pregunta) =====
+    if len(user_norm.split()) <= 2:
+        palabras = user_norm.split()
+        for p in palabras:
+            if p in ["si", "sip", "claro", "correcto", "vale", "ok", "espresso", "filtro", "tradicional", "exotico", "funky"]:
+                return "logica_compra"
     
-    if any(word in user_lower for word in ["espresso", "filtro", "tradicional", "exotico", "funky"]):
-        return "logica_compra"
+    # No se pudo clasificar con reglas
+    return None
+
+async def clasificar_con_ia(mensaje: str) -> str:
+    """
+    Usa OpenAI para clasificar mensajes que las reglas simples no pudieron procesar.
+    Retorna: 'logica_compra', 'ia_descripcion', 'pregunta_recordatorio', 'simple_saludo'
+    """
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+                {"role": "system", "content": """
+    Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
+
+    - DESCRIPCION: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés".
+
+    - COMPRA: El usuario quiere comprar o que le RECOMIENDES un café. Incluye preguntas sobre método (espresso/filtro) o perfil (tradicional/exótico/funky). Ejemplos: "quiero un café", "qué café me recomiendas", "quiero espresso", "me gusta el perfil exótico".
+
+    - RECORDATORIO: El usuario pregunta qué eligió antes. Ejemplos: "qué método elegí", "qué perfil dije", "qué me recomendaste".
+
+    - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".
+
+    Responde solo con la palabra: DESCRIPCION, COMPRA, RECORDATORIO o SALUDO.
+    """} ,
+            {"role": "user", "content": mensaje}
+        ],
+        temperature=0,
+        max_tokens=20
+    )
     
-    return "logica_compra"  # por defecto
+    clasificacion = response.choices[0].message.content.strip().lower()
+    
+    # Mapear la respuesta de la IA a nuestros códigos internos
+    mapeo = {
+        "descripcion": "ia_descripcion",
+        "compra": "logica_compra",
+        "recordatorio": "pregunta_recordatorio",
+        "saludo": "simple_saludo"
+    }
+    
+    return mapeo.get(clasificacion, "logica_compra")
