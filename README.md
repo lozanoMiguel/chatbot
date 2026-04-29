@@ -49,3 +49,35 @@ Sigue estos pasos para tener el asistente funcionando en tu máquina:
     git clone https://github.com/lozanoMiguel/chatbot.git
     cd chatbot
     ```
+2.  Crea y activa un entorno virtual:
+
+    bash
+    python -m venv venv
+    source venv/bin/activate # En Windows usa: .\venv\Scripts\activate
+
+3.  Instala las dependencias:
+
+    bash
+    pip install -r requirements.txt
+
+4.  Configura las variables de entorno:
+
+    Crea un archivo .env en la raíz del proyecto.
+
+    Añade tus claves:
+
+    text
+    OPENAI_API_KEY="tu_api_key_de_openai"
+    DATABASE_URL="tu_cadena_de_conexion_de_supabase"
+
+5.  Indexa la base de conocimiento:
+
+    bash
+    python indexar_documentos.py
+    (Este paso es crucial para que el RAG funcione. El script procesará los documentos de la carpeta documentos_cafeteria y creará el índice vectorial en chroma_db)
+
+6.  Inicia el servidor:
+
+    bash
+    uvicorn app.main:app --reload
+    (Abre http://localhost:8000 para empezar a chatear)
