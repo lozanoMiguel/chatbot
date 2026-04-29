@@ -4,7 +4,7 @@
 
 **¿Quieres probarlo?** 👉 [**Demo en vivo en Render**](https://chatbot-180426.onrender.com)
 
-![Vista previa del asistente de café](link_a_tu_captura_de_pantalla.png) <!-- (Opcional) Puedes añadir una captura de pantalla aquí -->
+![Vista previa del asistente de café](images/chatbot.png) <!-- (Opcional) Puedes añadir una captura de pantalla aquí -->
 
 ---
 
