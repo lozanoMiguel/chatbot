@@ -24,7 +24,6 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Ahora guarda también la lista de últimos cafés recomendados
 estado_usuario = defaultdict(lambda: {"metodo": None, "perfil": None, "ultimos_cafes": []})
 
-
 # ==================== LIFESPAN ====================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
