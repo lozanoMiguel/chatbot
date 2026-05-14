@@ -1,0 +1,32 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Variables de entorno
+.env
+.env.local
+
+# Base de datos local
+*.db
+*.sqlite
+chroma_db/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Documentación
+README.md

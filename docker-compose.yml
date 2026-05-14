@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  chatbot:
+    build: .
+    container_name: cafbot
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+    volumes:
+      - ./chroma_db:/app/chroma_db # persistir el índice vectorial
+    restart: unless-stopped
