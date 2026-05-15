@@ -87,39 +87,40 @@ Sigue estos pasos para tener el asistente funcionando en tu máquina:
     (Abre http://localhost:8000 para empezar a chatear)
     ```
     
-Opción B: Con Docker (recomendado)
+**Opción B: Con Docker**
 Requisitos: Docker y Docker Compose instalados.
 
-Clona el repositorio (si no lo hiciste)
+1.**Clona el repositorio (si no lo hiciste)**
 
  ```bash
 git clone https://github.com/lozanoMiguel/chatbot.git
 cd chatbot
  ```
-Crea un archivo .env con tus claves (ejemplo):
+2.**Crea un archivo .env con tus claves (ejemplo)**:
  
  ```text
 OPENAI_API_KEY=sk-...
 DATABASE_URL=postgresql://...
  ```
-Levanta el contenedor con Docker Compose:
+3.**Levanta el contenedor con Docker Compose**:
 
  ```bash
 docker compose up -d
-Si prefieres usar docker run:
+```
+**Si prefieres usar docker run**:
 
  ```bash
 docker run -d -p 8000:8000 --env-file .env --name cafbot cafbot:latest
  ```
-Abre tu navegador en http://localhost:8000
+4.**Abre tu navegador** en http://localhost:8000
 
 Nota: La primera vez puede tardar unos minutos mientras se descargan las dependencias y se construye la imagen. Una vez creada, los siguientes lanzamientos serán casi instantáneos.
 
-🐳 Imagen Docker pública (opcional)
+🐳 **Imagen Docker pública (opcional)**
 Si prefieres usar la imagen preconstruida desde Docker Hub:
 
  ```bash
-docker pull lozanoMiguel/cafbot:latest   # sustituye con tu usuario real
-docker run -d -p 8000:8000 --env-file .env lozanoMiguel/cafbot:latest
+docker pull migloz/cafbot:latest   
+docker run -d -p 8000:8000 --env-file .env migloz/cafbot:latest
  ```
-O modifica el docker-compose.yml para usar image: lozanoMiguel/cafbot:latest en lugar de build: ..
+O modifica el docker-compose.yml para usar image: migloz/cafbot:latest en lugar de build: ..
