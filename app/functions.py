@@ -56,7 +56,7 @@ def normalizar_texto(texto: str) -> str:
 
 def clasificar_intencion_simple(mensaje: str) -> str:
     """
-    Clasifica usando reglas simples (rápido y gratuito).
+    Clasifica usando reglas simples.
     Retorna: 'logica_compra', 'simple_saludo', 'pregunta_recordatorio', o None si no está claro
     """
     user_norm = normalizar_texto(mensaje)
@@ -98,7 +98,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
                 {"role": "system", "content": """
     Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
 
-    - DESCRIPCION: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés".
+    - DESCRIPCION: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características), un metodo(espresso o filtro) o un perfil(tradicional, exotico o fanky). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés", "puedes explicarme los diferentes perfiles?".
 
     - COMPRA: El usuario quiere comprar o que le RECOMIENDES un café. Incluye preguntas sobre método (espresso/filtro) o perfil (tradicional/exótico/funky). Ejemplos: "quiero un café", "qué café me recomiendas", "quiero espresso", "me gusta el perfil exótico".
 
