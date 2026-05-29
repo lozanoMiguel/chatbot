@@ -143,7 +143,8 @@ async def preguntar(pregunta: Pregunta):
                     """
             
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                #gpt-4o-mini utilizar este modelo
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
