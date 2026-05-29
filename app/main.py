@@ -711,7 +711,10 @@ async def get_chat():
             messageDiv.className = `message ${isUser ? "user" : "assistant"}`;
             const contentDiv = document.createElement("div");
             contentDiv.className = "message-content";
-            contentDiv.innerHTML = content.replace(/\\n/g, "<br>");
+            let formattedContent = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')   // negrita
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');             // cursiva (opcional)
+            contentDiv.innerHTML = formattedContent.replace(/\\n/g, '<br>');
             messageDiv.appendChild(contentDiv);
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
