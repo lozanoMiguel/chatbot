@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   chatbot:
-    image: migloz/cafbot:v1.2.0
+    image: migloz/cafbot:latest # o la imagen base que tengas
     container_name: cafbot
     ports:
       - "8000:8000"
@@ -12,5 +12,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./chroma_db:/app/chroma_db # persistir el índice vectorial
+      - ./app:/app/app # 👈 MONTA TU CÓDIGO LOCAL
+      - ./chroma_db:/app/chroma_db
+      - ./indexar_documentos.py:/app/indexar_documentos.py # opcional
     restart: unless-stopped
