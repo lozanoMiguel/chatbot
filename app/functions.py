@@ -93,7 +93,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
     Retorna: 'logica_compra', 'ia_descripcion', 'pregunta_recordatorio', 'simple_saludo'
     """
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[
                 {"role": "system", "content": """
     Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
