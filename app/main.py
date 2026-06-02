@@ -1,8 +1,3 @@
-"""
-Chatbot de café - Main
-Flujo controlado por lógica dura en Python, no por IA.
-"""
-
 from contextlib import asynccontextmanager
 from collections import defaultdict
 from fastapi import FastAPI, HTTPException
