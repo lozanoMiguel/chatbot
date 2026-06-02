@@ -71,7 +71,7 @@ async def preguntar(pregunta: Pregunta):
         print(f"   📊 Estado: método={estado['metodo']}, perfil={estado['perfil']}, ultimos_cafes={estado['ultimos_cafes']}")
         
         intencion = clasificar_intencion_simple(user_lower)
-        print(f"   🧠 Intención: {intencion}")
+        print(f"   🧠 Intenciónnnn: {intencion}")
         
         if intencion is None:
         # Si las reglas simples no pudieron clasificar, usamos IA
