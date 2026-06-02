@@ -96,12 +96,15 @@ async def preguntar(pregunta: Pregunta):
                     ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
                 }
                 cafes_a_describir = matriz_cafes.get((estado["metodo"], estado["perfil"]), [])
+                
             
             if cafes_a_describir:
                 # Buscar contexto SOLO para esos cafés
                 contexto_parts = []
+                
                 for cafe in cafes_a_describir:
-                    contexto_parts.append(buscar_contexto(cafe))
+                    contexto_parts.append(buscar_contexto(cafe, filtro_nombre=cafe))
+                    
                 contexto = "\n\n".join(contexto_parts)
                 
                 system_prompt = f"""
