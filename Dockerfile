@@ -27,8 +27,7 @@ COPY . .
 # Exponer el puerto que usará Render
 EXPOSE 8000
 
-RUN python indexar_documentos.py
 
 # Comando para ejecutar la aplicación
 # Usamos uvicorn directamente (gunicorn opcional para producción)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD sh -c "python indexar_documentos.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
