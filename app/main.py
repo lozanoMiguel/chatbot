@@ -103,6 +103,8 @@ async def preguntar(pregunta: Pregunta):
                 contexto_parts = []
                 
                 for cafe in cafes_a_describir:
+                    print(f"\n🔍 Buscando: {cafe}")
+                   
                     contexto_parts.append(buscar_contexto(cafe, filtro_nombre=cafe))
                     
                 contexto = "\n\n".join(contexto_parts)

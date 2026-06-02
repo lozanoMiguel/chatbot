@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   chatbot:
-    image: migloz/cafbot:latest # o la imagen base que tengas
+    image: migloz/cafbot:v1.2.1
     container_name: cafbot
     ports:
       - "8000:8000"
