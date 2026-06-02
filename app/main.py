@@ -671,7 +671,7 @@ async def get_chat():
         
         <div class="chat-container">
             <div class="chat-header">
-                <h1>☕ Asistente de Café</h1>
+                <h1>☕ Asistente de Cafeee</h1>
                 <p>Tu experto barista personal - Pregúntame lo que quieras sobre café</p>
             </div>
             <div class="chat-messages" id="chatMessages">
