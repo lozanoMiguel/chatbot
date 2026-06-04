@@ -6,6 +6,27 @@ from app.config import OPENAI_API_KEY
 # Cliente OpenAI (reutilizamos el mismo)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+#consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
+def get_metodo(mensaje: str) -> str:
+    metodo = ""
+    if "espresso" in mensaje or "expreso" in mensaje:
+        metodo = "espresso"
+    elif "filtro" in mensaje or "filter" in mensaje:
+        metodo = "filtro"
+    
+    return metodo
+
+def get_perfil(mensaje: str) -> str:
+    metodo = ""
+    if "tradicional" in mensaje:
+        metodo = "tradicional"
+    elif "exotico" in mensaje:
+        metodo = "exotico"
+    elif "funky" in mensaje or "fanky" in mensaje:
+        metodo = "fanky"
+    
+    return metodo
+
 def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     """Recomienda cafés según método y perfil, y opcionalmente guarda la lista en el estado"""
     matriz = {
@@ -90,24 +111,26 @@ def clasificar_intencion_simple(mensaje: str) -> str:
 async def clasificar_con_ia(mensaje: str) -> str:
     """
     Usa OpenAI para clasificar mensajes que las reglas simples no pudieron procesar.
-    Retorna: 'logica_compra', 'ia_descripcion', 'pregunta_recordatorio', 'simple_saludo'
+    Retorna: 'logica_compra', 'ia_descripcion_cafe', 'ia_faq', 'pregunta_recordatorio', 'simple_saludo'
     """
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-                {"role": "system", "content": """
-    Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
+            {"role": "system", "content": """
+                    Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
 
-    - DESCRIPCION: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características), un metodo(espresso o filtro) o un perfil(tradicional, exotico o fanky). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés", "puedes explicarme los diferentes perfiles?".
+                    - DESCRIPCION_CAFE: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés","Que origen tiene el cafe Condor".
+                    
+                    - DESCRIPCION_FAQ: El usuario quiere que le respondas preguntas tipicas en una cafeteria de especialidad O que le DESCRIBAS un metodo, un perfil o acerca de un tostado. Ejemplo: "¿Qué café me recomiendas si soy principiante?", "¿Recomiéndame un café para filtro?", "¿Cuál es el café más ácido y afrutado?", "Explicame los diferentes perfiles cafe que tienen", "Explicame el cafe exotico","Como se prepara un cafe filtrado?", "Como es el tostado de cafe para espresso?" .
+                    
+                    - COMPRA: El usuario quiere comprar o que le RECOMIENDES un café. Incluye preguntas sobre método (espresso/filtro) o perfil (tradicional/exótico/funky). Ejemplos: "quiero un café", "qué café me recomiendas", "quiero espresso", "me gusta el perfil exótico", "que opciones tienes?".
 
-    - COMPRA: El usuario quiere comprar o que le RECOMIENDES un café. Incluye preguntas sobre método (espresso/filtro) o perfil (tradicional/exótico/funky). Ejemplos: "quiero un café", "qué café me recomiendas", "quiero espresso", "me gusta el perfil exótico".
+                    - RECORDATORIO: El usuario pregunta sobre cafes que le recomendaste anteriorment. Ejemplos: "que cafes me habias recomendado?", "qué opciones tenia?".
 
-    - RECORDATORIO: El usuario pregunta qué eligió antes. Ejemplos: "qué método elegí", "qué perfil dije", "qué me recomendaste".
+                    - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".
 
-    - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".
-
-    Responde solo con la palabra: DESCRIPCION, COMPRA, RECORDATORIO o SALUDO.
-    """} ,
+                    Responde solo con la palabra: DESCRIPCION, COMPRA, RECORDATORIO o SALUDO.
+                    """},
             {"role": "user", "content": mensaje}
         ],
         temperature=0,
@@ -118,7 +141,8 @@ async def clasificar_con_ia(mensaje: str) -> str:
     
     # Mapear la respuesta de la IA a nuestros códigos internos
     mapeo = {
-        "descripcion": "ia_descripcion",
+        "descripcion_faq":"ia_faq",
+        "descripcion_cafe": "ia_descripcion_cafe",
         "compra": "logica_compra",
         "recordatorio": "pregunta_recordatorio",
         "saludo": "simple_saludo"

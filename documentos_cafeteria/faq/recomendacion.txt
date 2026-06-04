@@ -23,4 +23,4 @@ PREGUNTA: ¿Tienen café funky para filtro?
 RESPUESTA: No, nuestro único café funky (Coyote) está tostado para espresso.
 
 PREGUNTA: ¿Cuántos cafés exóticos tienen para espresso?
-RESPUESTA: Tenemos tres: Dimeti (Etiopía), Delfín Rosado (Colombia) y Puma (El Salvador).
+RESPUESTA: Tenemos 3, el Puma, el Delfin Rosado y el Dimeti

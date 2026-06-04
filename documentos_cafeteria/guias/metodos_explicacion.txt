@@ -1,6 +1,6 @@
 METODOS DE CAFE
 
-CAFE ESPRESSO: El espresso se prepara forzando agua caliente a alta presión (≈9 bares) a través de café muy fino durante unos 25–35 segundos. Sus caracteristicas son una molienda fina, un tiempo de extraccion corto, una presion alta, una bebida concentrada, una textura densa y con cuerpo cremoso. Los diferentes metodos dentro del espresso son maquina de espresso tradicional, manual lever y superautomatica
+- CAFE ESPRESSO: El espresso se prepara forzando agua caliente a alta presión (≈9 bares) a través de café muy fino durante unos 25–35 segundos. Sus caracteristicas son una molienda fina, un tiempo de extraccion corto, una presion alta, una bebida concentrada, una textura densa y con cuerpo cremoso. Los diferentes metodos dentro del espresso son maquina de espresso tradicional, manual lever y superautomatica
 
-CAFE FILTRO: En filtro, el agua pasa por gravedad o inmersión a través del café, sin presión alta.  Sus caracteristicas son una molienda media-gruesa, un tiempo de extraccion mas largo, una presion practicamente nula, el resultado es una bebida mas ligera con una textura limpia y clara. Los diferentes metodos dentro del filtro son v60, chemex, frenchpress y aeropress
+- CAFE FILTRO: En filtro, el agua pasa por gravedad o inmersión a través del café, sin presión alta.  Sus caracteristicas son una molienda media-gruesa, un tiempo de extraccion mas largo, una presion practicamente nula, el resultado es una bebida mas ligera con una textura limpia y clara. Los diferentes metodos dentro del filtro son v60, chemex, frenchpress y aeropress
  
