@@ -7,7 +7,7 @@ RESPUESTA: Los Exóticos, especialmente Delfín Rosado (notas a fresa, miel de l
 PREGUNTA: ¿Cuál es el café más intenso y licoroso?
 RESPUESTA: Coyote, nuestro único Funky. Notas a brownie, mermelada de melocotón y moscatel. Para paladares atrevidos.
 
-PREGUNTA: ¿Qué café es mejor para espresso con leche?
+PREGUNTA: ¿Qué café es mejor para un latte?
 RESPUESTA: Los Tradicionales achocolatados como Alacrán, Cóndor o Lince. Su perfil combina perfectamente con la leche.
 
 PREGUNTA: ¿Recomiéndame un café para filtro?
@@ -24,3 +24,4 @@ RESPUESTA: No, nuestro único café funky (Coyote) está tostado para espresso.
 
 PREGUNTA: ¿Cuántos cafés exóticos tienen para espresso?
 RESPUESTA: Tenemos 3, el Puma, el Delfin Rosado y el Dimeti
+

@@ -9,9 +9,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 #consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
 def get_metodo(mensaje: str) -> str:
     metodo = ""
-    if "espresso" in mensaje or "expreso" in mensaje:
+    if "espresso" in mensaje or "expreso" in mensaje or "espreso" in mensaje:
         metodo = "espresso"
-    elif "filtro" in mensaje or "filter" in mensaje:
+    elif "filtro" in mensaje or "filter" in mensaje or "filtrado" in mensaje:
         metodo = "filtro"
     
     return metodo
@@ -91,7 +91,7 @@ def clasificar_intencion_simple(mensaje: str) -> str:
         return "simple_saludo"
     
     # ===== PALABRAS CLARAS DE COMPRA =====
-    if any(phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "recomienda", "cafe por favor"]):
+    if any(phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]):
         return "logica_compra"
     
     # ===== PALABRAS CLARAS DE RECORDATORIO =====
@@ -111,7 +111,7 @@ def clasificar_intencion_simple(mensaje: str) -> str:
 async def clasificar_con_ia(mensaje: str) -> str:
     """
     Usa OpenAI para clasificar mensajes que las reglas simples no pudieron procesar.
-    Retorna: 'logica_compra', 'ia_descripcion_cafe', 'ia_faq', 'pregunta_recordatorio', 'simple_saludo'
+    Retorna: 'compra','ia_descripcion_cafe', 'ia_faq', 'pregunta_recordatorio', 'simple_saludo'
     """
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -119,12 +119,12 @@ async def clasificar_con_ia(mensaje: str) -> str:
             {"role": "system", "content": """
                     Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
 
+                    - COMPRA: Si el hilo de la conversacion es acerca de recomendar un cafe. Por ejemplo: Si el usuario pide explicacion de los perfiles de cafe y te responde con uno de ellos, junto al metodo recomendarle los cafes que correspondan o consultar el metodo en caso de no tenerlo, si el usuario responde a la pregunta de si el cafe lo toma en espresso o en filtro.
+                    
                     - DESCRIPCION_CAFE: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés","Que origen tiene el cafe Condor".
                     
                     - DESCRIPCION_FAQ: El usuario quiere que le respondas preguntas tipicas en una cafeteria de especialidad O que le DESCRIBAS un metodo, un perfil o acerca de un tostado. Ejemplo: "¿Qué café me recomiendas si soy principiante?", "¿Recomiéndame un café para filtro?", "¿Cuál es el café más ácido y afrutado?", "Explicame los diferentes perfiles cafe que tienen", "Explicame el cafe exotico","Como se prepara un cafe filtrado?", "Como es el tostado de cafe para espresso?" .
                     
-                    - COMPRA: El usuario quiere comprar o que le RECOMIENDES un café. Incluye preguntas sobre método (espresso/filtro) o perfil (tradicional/exótico/funky). Ejemplos: "quiero un café", "qué café me recomiendas", "quiero espresso", "me gusta el perfil exótico", "que opciones tienes?".
-
                     - RECORDATORIO: El usuario pregunta sobre cafes que le recomendaste anteriorment. Ejemplos: "que cafes me habias recomendado?", "qué opciones tenia?".
 
                     - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".

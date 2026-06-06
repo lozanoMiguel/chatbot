@@ -56,11 +56,16 @@ async def preguntar(pregunta: Pregunta):
         
         user_lower = user_message.lower()
         
-        # actualizar estado con funciones get_metodo para definir si es espresso o filtro, y get_perfil si quiere tradicional, exotico o fanky
-        if not estado_usuario[session_id]["metodo"]:
-            estado_usuario[session_id]["metodo"] = get_metodo(user_lower)
-        if not estado_usuario[session_id]["perfil"]:  
-            estado_usuario[session_id]["perfil"] = get_perfil(user_lower)
+        metodos = ["espresso", "espreso", "expreso", "expresso", "filtro", "filtrado", "filter"]
+        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fanky" "funky"]
+        
+        for met in metodos:
+            if met in user_lower:
+                estado_usuario[session_id]["metodo"] = get_metodo(user_lower)
+         
+        for per in perfiles:
+            if per in user_lower:  
+                estado_usuario[session_id]["perfil"] = get_perfil(user_lower)
         
         #asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriormente, utilizamos dicha variable sin tocar la original: estado_usuario)
         estado = estado_usuario[session_id]
@@ -77,7 +82,7 @@ async def preguntar(pregunta: Pregunta):
         else:
             print(f"   📏 Reglas simples clasificaron como: {intencion}")
             
-        # ========== RUTA 1: IA para descripciones ==========
+        # ========== RUTA 1: IA para descripciones de cafe ==========
         if intencion == "ia_descripcion_cafe":
             print(f"   🤖 Usando IA + RAG")
             cafes_mencionados = []
@@ -96,7 +101,7 @@ async def preguntar(pregunta: Pregunta):
                     
             if cafes_mencionados:
                 cafes_a_describir = cafes_mencionados
-                print(f"Usuario menciono especificamente{cafes_mencionados}")
+                print(f"Usuario menciono especificamente{cafes_mencionados} verificacion: {cafes_a_describir}")
             elif estado.get("ultimos_cafes", []):
                 cafes_a_describir = estado.get("ultimos_cafes", [])
                 print(f"Usando ultimos cafes")
@@ -109,7 +114,6 @@ async def preguntar(pregunta: Pregunta):
                     ("espresso", "funky"): ["Coyote"],
                     ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
                 }
-                
                 cafes_a_describir = matriz_cafes.get((estado["metodo"], estado["perfil"]), [])
                 print(f"   📌 Usando matriz: {cafes_a_describir}")
                 
@@ -117,15 +121,15 @@ async def preguntar(pregunta: Pregunta):
             if cafes_a_describir:
                 # Buscar contexto SOLO para esos cafés
                 contexto_parts = []
-                
+                    
                 for cafe in cafes_a_describir:
                     print(f"\n🔍 Buscando: {cafe}")
                     contexto_parts.append(buscar_contexto(cafe, filtro_nombre=cafe))
-                    
+                        
                 contexto = "\n\n".join(contexto_parts)
-                
+                    
                 system_prompt = f"""
-                    Eres dueño de una cafetería que tuesta su propio cafe y los vende. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {', '.join(cafes_a_describir)}.
+                    Eres dueño y tostador en una cafeteria que vende su propio cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {', '.join(cafes_a_describir)}.
 
                     No menciones ningún otro café que no esté en esta lista.
 
@@ -134,18 +138,33 @@ async def preguntar(pregunta: Pregunta):
 
                     REGLAS DE FORMATO OBLIGATORIAS:
                     1. Escribe CADA café en una línea NUEVA.
-                    2. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
-                    3. Deja UNA línea en blanco entre cada café.
-                    4. Puedes agregar 2 o 3 emojis, no mas. 
-                    5. Ejemplo de formato CORRECTO:
+                    2. Menciona el nombre del cafe en formato negrita.
+                    3. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
+                    4. Deja UNA línea en blanco entre cada café.
+                    5. Puedes agregar 2 o 3 emojis, no mas. 
+                    6. Ejemplo de formato CORRECTO:
 
                     - Alacrán: notas de chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
 
                     - Cóndor: notas de caramelo y frutos amarillos. Cuerpo jugoso, acidez equilibrada, Ideal para principiantes o para quienes toman café con leche.
 
                     Responde de forma natural y entusiasta, pero respetando el formato.
+                    
                     """
-            
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message}
+                    ],
+                    temperature=0.3,
+                    max_tokens=500
+                )
+                respuesta_texto = response.choices[0].message.content
+            else:
+                respuesta_texto= "No tengo información sobre esos cafés. ¿Podrías especificar cuál te interesa?" 
+                
+        # ========== RUTA 2: IA descripciones y consultas ==========   
         elif intencion == "ia_faq":
             contexto = buscar_contexto(user_lower)
             system_prompt =  f"""
@@ -156,8 +175,7 @@ async def preguntar(pregunta: Pregunta):
                                 {contexto}
 
                                 REGLAS DE FORMATO:
-                                - Usa saltos de línea entre ideas.
-                                - Si enumeras cafés, usa líneas separadas con guiones.
+                                - Si mencionas cafes, mencionalos en formato negrita.
                                 - Puedes utilizar emoticones si deseas, 2 o 3 no mas.
                                 """    
             response = client.chat.completions.create(
@@ -171,7 +189,7 @@ async def preguntar(pregunta: Pregunta):
             )
             respuesta_texto = response.choices[0].message.content
             
-        # ========== RUTA 2: Recordatorio de cafes ==========
+        # ========== RUTA 3: Recordatorio de cafes ==========
         elif intencion == "pregunta_recordatorio":
             print(f"   📝 Usando recordatorio de estado")
             
@@ -181,7 +199,7 @@ async def preguntar(pregunta: Pregunta):
             else:
                 respuesta_texto = "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
 
-        # ========== RUTA 3: Saludos y agradecimientos ==========
+        # ========== RUTA 4: Saludos y agradecimientos ==========
         elif intencion == "simple_saludo":
             if "gracias" in user_lower or "graciass" in user_lower:
                 respuesta_texto = "¡De nada! Me alegra haberte ayudado. ¿Hay algo más en lo que pueda asistirte? ☕"
@@ -190,7 +208,7 @@ async def preguntar(pregunta: Pregunta):
             else:
                 respuesta_texto = "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
 
-        # ========== RUTA 4: Lógica dura (compra) ==========
+        # ========== RUTA 5: Lógica dura (compra) ==========
         else:  # logica_compra
             print(f"   💻 Usando lógica dura")
             
