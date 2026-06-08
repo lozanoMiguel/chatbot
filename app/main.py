@@ -57,7 +57,7 @@ async def preguntar(pregunta: Pregunta):
         user_lower = user_message.lower()
         
         metodos = ["espresso", "espreso", "expreso", "expresso", "filtro", "filtrado", "filter"]
-        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fanky" "funky"]
+        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fanky" "funky","fonky"]
         
         for met in metodos:
             if met in user_lower:

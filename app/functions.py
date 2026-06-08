@@ -21,7 +21,7 @@ def get_perfil(mensaje: str) -> str:
     elif any(palabra in mensaje for palabra in ["exotico", "exotic"]):
         return"exotico"
     elif any(palabra in mensaje for palabra in ["funky","fanky","fonky"]):
-        return "fanky"
+        return "funky"
     return ""
 
 def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
