@@ -8,24 +8,21 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 #consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
 def get_metodo(mensaje: str) -> str:
-    metodo = ""
-    if "espresso" in mensaje or "expreso" in mensaje or "espreso" in mensaje:
-        metodo = "espresso"
-    elif "filtro" in mensaje or "filter" in mensaje or "filtrado" in mensaje:
-        metodo = "filtro"
-    
-    return metodo
+    if any (palabra in mensaje for palabra in ["espresso", "expresso","espreso","expreso"]):
+        return  "espresso"
+    elif any(palabra in mensaje for palabra in ["filtro","filter", "filtrado"]):
+        return "filtro"
+    return ""
 
 def get_perfil(mensaje: str) -> str:
-    metodo = ""
-    if "tradicional" in mensaje:
-        metodo = "tradicional"
-    elif "exotico" in mensaje:
-        metodo = "exotico"
-    elif "funky" in mensaje or "fanky" in mensaje:
-        metodo = "fanky"
     
-    return metodo
+    if "tradicional" in mensaje:
+        return "tradicional"
+    elif any(palabra in mensaje for palabra in ["exotico", "exotic"]):
+        return"exotico"
+    elif any(palabra in mensaje for palabra in ["funky","fanky","fonky"]):
+        return "fanky"
+    return ""
 
 def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     """Recomienda cafés según método y perfil, y opcionalmente guarda la lista en el estado"""
