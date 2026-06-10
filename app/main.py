@@ -252,7 +252,7 @@ async def get_chat():
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Asistente de Cafeeee ☕</title>
+        <title>Asistente de Cafe ☕</title>
         <link rel="icon" type="image/png" href="/static/logo.png">
         <style>
     * {
@@ -707,8 +707,8 @@ async def get_chat():
         
         <div class="chat-container">
             <div class="chat-header">
-                <h1>☕ Asistente de Cafeee</h1>
-                <p>Tu experto barista personal - Pregúntame lo que quieras sobre café</p>
+                <h1>☕ Asistente de Cafe</h1>
+                <p>Pregúntame lo que quieras sobre café</p>
             </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="message assistant">
