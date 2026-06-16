@@ -25,7 +25,6 @@ estado_usuario = defaultdict(lambda: {"metodo": None, "perfil": None, "ultimos_c
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    print("✅ Base de datos inicializada")
     yield
     print("🛑 Servidor detenido")
 
