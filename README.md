@@ -20,7 +20,7 @@ Este proyecto implementa una arquitectura moderna de IA híbrida, combinando la 
 | **Memoria Artificial** | `Python + `[![aiosqlite](https://img.shields.io/badge/aiosqlite-4479A1?style=for-the-badge&logo=sqlite&logoColor=white)](https://github.com/omnilib/aiosqlite)                                                | Gestiona el estado de la conversación (método/perfil) en un diccionario en memoria. |
 | **RAG (Búsqueda)**     | ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge) + ![Chroma](https://img.shields.io/badge/Chroma-4C4C4C?style=for-the-badge)                                                   | Implementa **RAG** para buscar en una base de conocimiento vectorial.               |
 | **Frontend**           | HTML5, CSS3, JavaScript                                                                                                                                                                                       | Interfaz de usuario sencilla, responsiva y con diseño claro (modo claro/oscuro).    |
-| **Infraestructura**    | ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=black) + ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) | Despliegue en la nube de la API y la base de datos.                                 |
+| **Infraestructura**    | ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=black) + ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) | Despliegue en la nube de la API y contenerizacion.                                 |
 
 ### ⚙️ Funcionamiento Interno
 
