@@ -3,6 +3,7 @@ import asyncpg
 from app.config import DATABASE_URL
 
 async def init_db():
+    flag=0
     if DATABASE_URL.startswith("postgresql"):
         conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
         await conn.execute("""
@@ -15,6 +16,7 @@ async def init_db():
             )
         """)
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
+        flag = 1
         await conn.close()
     else:
         async with aiosqlite.connect(DATABASE_URL) as db:
@@ -28,7 +30,8 @@ async def init_db():
                 )
             """)
             await db.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
-    print("✅ Base de datos inicializada")
+            flag = 2
+    print(f"✅ Base de datos inicializada {flag}")
 
 async def save_message(session_id: str, role: str, content: str):
     if DATABASE_URL.startswith("postgresql"):
