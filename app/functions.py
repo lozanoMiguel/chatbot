@@ -11,7 +11,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
 def get_metodo(mensaje: str) -> str:
-    if any(palabra in mensaje for palabra in ["espresso", "expresso", "espreso", "expreso"]):
+    if any(
+        palabra in mensaje for palabra in ["espresso", "expresso", "espreso", "expreso"]
+    ):
         return "espresso"
     elif any(palabra in mensaje for palabra in ["filtro", "filter", "filtrado"]):
         return "filtro"
@@ -46,7 +48,9 @@ def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
         estado_usuario[session_id]["ultimos_cafes"] = cafes
 
     if not cafes:
-        return f"No tenemos cafés {perfil} para {metodo}. ¿Te gustaría probar otro perfil?"
+        return (
+            f"No tenemos cafés {perfil} para {metodo}. ¿Te gustaría probar otro perfil?"
+        )
     elif len(cafes) == 1:
         return f"Para {metodo} y perfil {perfil}, te recomiendo {cafes[0]}. ¡Es una excelente elección!"
     else:
@@ -97,13 +101,15 @@ def clasificar_intencion_simple(mensaje: str) -> str:
 
     # ===== PALABRAS CLARAS DE COMPRA =====
     if any(
-        phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]
+        phrase in user_norm
+        for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]
     ):
         return "logica_compra"
 
     # ===== PALABRAS CLARAS DE RECORDATORIO =====
     if any(
-        phrase in user_norm for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]
+        phrase in user_norm
+        for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]
     ):
         return "pregunta_recordatorio"
 

@@ -52,7 +52,9 @@ def mock_openai():
     """
     with patch("openai.chat.completions.create") as mock:
         mock.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))]
+            choices=[
+                MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))
+            ]
         )
         yield mock
 

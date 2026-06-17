@@ -17,7 +17,9 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        await conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)"
+        )
         flag = 1
         await conn.close()
     else:
@@ -31,7 +33,9 @@ async def init_db():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            await db.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
+            await db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)"
+            )
             flag = 2
     print(f"✅ Base de datos inicializada {flag}")
 

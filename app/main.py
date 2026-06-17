@@ -25,7 +25,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ==================== ESTADO DE CONVERSACIÓN ====================
 # Ahora guarda también la lista de últimos cafés recomendados
-estado_usuario = defaultdict(lambda: {"metodo": None, "perfil": None, "ultimos_cafes": []})
+estado_usuario = defaultdict(
+    lambda: {"metodo": None, "perfil": None, "ultimos_cafes": []}
+)
 
 
 # ==================== LIFESPAN ====================
@@ -38,7 +40,9 @@ async def lifespan(app: FastAPI):
 
 # ==================== APP ====================
 app = FastAPI(title="CafBot - Asistente de Café", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -66,8 +70,23 @@ async def preguntar(pregunta: Pregunta):
 
         user_lower = user_message.lower()
 
-        metodos = ["espresso", "espreso", "expreso", "expresso", "filtro", "filtrado", "filter"]
-        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fankyfunky", "fonky"]
+        metodos = [
+            "espresso",
+            "espreso",
+            "expreso",
+            "expresso",
+            "filtro",
+            "filtrado",
+            "filter",
+        ]
+        perfiles = [
+            "tradicionales",
+            "tradicional",
+            "exotico",
+            "exotic",
+            "fankyfunky",
+            "fonky",
+        ]
 
         for met in metodos:
             if met in user_lower:
@@ -134,12 +153,19 @@ async def preguntar(pregunta: Pregunta):
             # PRIORIDAD 2: Si no hay cafés guardados, usar la matriz según método+perfil
             if not cafes_a_describir and estado["metodo"] and estado["perfil"]:
                 matriz_cafes = {
-                    ("espresso", "tradicional"): ["Alacrán", "Cóndor", "Lince", "Yurumi"],
+                    ("espresso", "tradicional"): [
+                        "Alacrán",
+                        "Cóndor",
+                        "Lince",
+                        "Yurumi",
+                    ],
                     ("espresso", "exotico"): ["Dimeti", "Delfín Rosado", "Puma"],
                     ("espresso", "funky"): ["Coyote"],
                     ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
                 }
-                cafes_a_describir = matriz_cafes.get((estado["metodo"], estado["perfil"]), [])
+                cafes_a_describir = matriz_cafes.get(
+                    (estado["metodo"], estado["perfil"]), []
+                )
                 print(f"   📌 Usando matriz: {cafes_a_describir}")
 
             if cafes_a_describir:
@@ -186,9 +212,7 @@ async def preguntar(pregunta: Pregunta):
                 )
                 respuesta_texto = response.choices[0].message.content
             else:
-                respuesta_texto = (
-                    "No tengo información sobre esos cafés. ¿Podrías especificar cuál te interesa?"
-                )
+                respuesta_texto = "No tengo información sobre esos cafés. ¿Podrías especificar cuál te interesa?"
 
         # ========== RUTA 2: IA descripciones y consultas ==========
         elif intencion == "ia_faq":
@@ -223,31 +247,33 @@ async def preguntar(pregunta: Pregunta):
                 cafes = estado["ultimos_cafes"]
                 respuesta_texto = f"Estos son los cafes que te recomendé anteriormente: {', '.join(cafes[:-1])} y {cafes[-1]}"
             else:
-                respuesta_texto = (
-                    "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
-                )
+                respuesta_texto = "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
 
         # ========== RUTA 4: Saludos y agradecimientos ==========
         elif intencion == "simple_saludo":
             if "gracias" in user_lower or "graciass" in user_lower:
                 respuesta_texto = "¡De nada! Me alegra haberte ayudado. ¿Hay algo más en lo que pueda asistirte? ☕"
             elif any(word in user_lower for word in ["adios", "chao", "hasta luego"]):
-                respuesta_texto = (
-                    "¡Gracias por consultarnos! Vuelve cuando quieras más café. ¡Hasta luego! ☕"
-                )
+                respuesta_texto = "¡Gracias por consultarnos! Vuelve cuando quieras más café. ¡Hasta luego! ☕"
             else:
-                respuesta_texto = "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+                respuesta_texto = (
+                    "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+                )
 
         # ========== RUTA 5: Lógica dura (compra) ==========
         else:  # logica_compra
             print("   💻 Usando lógica dura")
 
             if not estado["metodo"]:
-                respuesta_texto = "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+                respuesta_texto = (
+                    "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+                )
             elif estado["metodo"] and not estado["perfil"]:
                 respuesta_texto = f"Para café en {estado['metodo']}, ¿qué perfil te gusta? TRADICIONAL, EXÓTICO o FUNKY?"
             else:
-                respuesta_texto = recomendar_cafe(estado["metodo"], estado["perfil"], session_id)
+                respuesta_texto = recomendar_cafe(
+                    estado["metodo"], estado["perfil"], session_id
+                )
 
         # Guardar respuesta
         await save_message(session_id, "assistant", respuesta_texto)
@@ -267,7 +293,9 @@ async def preguntar(pregunta: Pregunta):
 @app.get("/debug/estado/{session_id}")
 async def debug_estado(session_id: str):
     """Ver el estado actual de una sesión (útil para depurar)"""
-    estado = estado_usuario.get(session_id, {"metodo": None, "perfil": None, "ultimos_cafes": []})
+    estado = estado_usuario.get(
+        session_id, {"metodo": None, "perfil": None, "ultimos_cafes": []}
+    )
     return {
         "session_id": session_id,
         "metodo": estado["metodo"],

@@ -25,6 +25,8 @@ def buscar_contexto(pregunta: str, filtro_nombre: str = None) -> str:
 
     # Si hay filtro por nombre, filtrar los resultados
     if filtro_nombre:
-        docs = [doc for doc in docs if filtro_nombre.lower() in doc.page_content.lower()]
+        docs = [
+            doc for doc in docs if filtro_nombre.lower() in doc.page_content.lower()
+        ]
         print(f"📄 Documentos encontrados: {len(docs)}")
     return "\n\n".join([doc.page_content for doc in docs])
