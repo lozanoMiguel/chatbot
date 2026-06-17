@@ -1,6 +1,8 @@
-import unicodedata
 import re
+import unicodedata
+
 from openai import OpenAI
+
 from app.config import OPENAI_API_KEY
 
 # Cliente OpenAI (reutilizamos el mismo)
@@ -15,7 +17,7 @@ def get_metodo(mensaje: str) -> str:
     return ""
 
 def get_perfil(mensaje: str) -> str:
-    
+
     if "tradicional" in mensaje:
         return "tradicional"
     elif any(palabra in mensaje for palabra in ["exotico", "exotic"]):
@@ -33,12 +35,12 @@ def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
         ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
     }
     cafes = matriz.get((metodo, perfil), [])
-    
+
     # Guardar en el estado si se proporciona session_id
     if session_id and cafes:
-        from app.main import estado_usuario 
+        from app.main import estado_usuario
         estado_usuario[session_id]["ultimos_cafes"] = cafes
-    
+
     if not cafes:
         return f"No tenemos cafés {perfil} para {metodo}. ¿Te gustaría probar otro perfil?"
     elif len(cafes) == 1:
@@ -57,19 +59,19 @@ def normalizar_texto(texto: str) -> str:
     """
     # 1. Convertir a minúsculas
     texto = texto.lower()
-    
+
     # 2. Eliminar acentos (normalizar a forma ASCII)
     #    'café' → 'cafe', 'té' → 'te', 'más' → 'mas'
     texto = unicodedata.normalize('NFKD', texto)
     texto = texto.encode('ASCII', 'ignore').decode('ASCII')
-    
+
     # 3. Eliminar signos de puntuación y caracteres especiales
     #    Solo mantenemos letras, números y espacios
     texto = re.sub(r'[^a-z0-9\s]', '', texto)
-    
+
     # 4. Eliminar espacios múltiples y trim
     texto = re.sub(r'\s+', ' ', texto).strip()
-    
+
     return texto
 
 def clasificar_intencion_simple(mensaje: str) -> str:
@@ -78,7 +80,7 @@ def clasificar_intencion_simple(mensaje: str) -> str:
     Retorna: 'logica_compra', 'simple_saludo', 'pregunta_recordatorio', o None si no está claro
     """
     user_norm = normalizar_texto(mensaje)
-    
+
     # ===== SALUDOS Y AGRADECIMIENTOS =====
     if "gracias" in user_norm:
         return "simple_saludo"
@@ -86,22 +88,22 @@ def clasificar_intencion_simple(mensaje: str) -> str:
         return "simple_saludo"
     if user_norm in ["hola", "buenos dias", "buenas tardes", "buenas noches"]:
         return "simple_saludo"
-    
+
     # ===== PALABRAS CLARAS DE COMPRA =====
     if any(phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]):
         return "logica_compra"
-    
+
     # ===== PALABRAS CLARAS DE RECORDATORIO =====
     if any(phrase in user_norm for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]):
         return "pregunta_recordatorio"
-    
+
     # ===== SI EL MENSAJE ES MUY CORTO (posible respuesta a pregunta) =====
     if len(user_norm.split()) <= 2:
         palabras = user_norm.split()
         for p in palabras:
             if p in ["si", "sip", "claro", "correcto", "vale", "ok", "espresso", "filtro", "tradicional", "exotico", "funky"]:
                 return "logica_compra"
-    
+
     # No se pudo clasificar con reglas
     return None
 
@@ -133,9 +135,9 @@ async def clasificar_con_ia(mensaje: str) -> str:
         temperature=0,
         max_tokens=20
     )
-    
+
     clasificacion = response.choices[0].message.content.strip().lower()
-    
+
     # Mapear la respuesta de la IA a nuestros códigos internos
     mapeo = {
         "descripcion_faq":"ia_faq",
@@ -144,5 +146,5 @@ async def clasificar_con_ia(mensaje: str) -> str:
         "recordatorio": "pregunta_recordatorio",
         "saludo": "simple_saludo"
     }
-    
+
     return mapeo.get(clasificacion, "logica_compra")

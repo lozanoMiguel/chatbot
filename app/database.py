@@ -1,6 +1,8 @@
 import aiosqlite
 import asyncpg
+
 from app.config import DATABASE_URL
+
 
 async def init_db():
     flag=0

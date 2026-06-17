@@ -5,11 +5,11 @@ pytest las carga automáticamente. Aquí centralizamos:
 - El cliente de test de FastAPI
 - Los mocks de OpenAI, RAG y Supabase
 """
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
- 
- 
+
 # ===========================================================
 # IMPORTANTE: Ajusta este import al path real de tu app
 # Ejemplos comunes:
@@ -17,10 +17,9 @@ from unittest.mock import MagicMock, patch
 #   from src.main import app
 #   from main import app
 # ===========================================================
+from app.main import app
 
-from app.main import app  
- 
- 
+
 @pytest.fixture
 def app_instance():
     """
@@ -31,14 +30,14 @@ def app_instance():
     raise NotImplementedError(
         "Ajusta el import de 'app' en conftest.py al path real de tu proyecto"
     )
- 
- 
+
+
 @pytest.fixture
 def client(app_instance):
     """Cliente HTTP de test para FastAPI (no levanta servidor real)."""
     return TestClient(app_instance)
- 
- 
+
+
 @pytest.fixture
 def mock_openai():
     """
@@ -59,8 +58,8 @@ def mock_openai():
             ]
         )
         yield mock
- 
- 
+
+
 @pytest.fixture
 def mock_rag():
     """
@@ -75,8 +74,8 @@ def mock_rag():
             MagicMock(page_content="Contexto relevante de prueba número 2."),
         ]
         yield mock
- 
- 
+
+
 @pytest.fixture
 def mock_db():
     """
@@ -86,8 +85,8 @@ def mock_db():
     with patch("app.database.save_conversation") as mock:
         mock.return_value = {"id": "test-uuid-123", "status": "saved"}
         yield mock
- 
- 
+
+
 @pytest.fixture
 def mock_db_error():
     """
@@ -98,5 +97,4 @@ def mock_db_error():
         mock.side_effect = Exception("Connection refused")
         yield mock
 
-        
- 
+
