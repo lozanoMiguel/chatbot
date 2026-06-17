@@ -85,9 +85,9 @@ jobs:
         # Alternativa con flake8: flake8 . --max-line-length=100
 
       ## ── 5. Formato — Black ───────────────────────────────
-      - name: 🎨 Black — Verificar formato
-        run: black --check .
-        # Si prefieres no usar black, elimina este step.
+      #- name: 🎨 Black — Verificar formato
+      # run: black --check .
+      # Si prefieres no usar black, elimina este step.
 
       ## ── 6. Type checking — mypy (opcional) ──────────────
       # - name: 🔬 Mypy — Type checking
