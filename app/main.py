@@ -165,7 +165,7 @@ async def preguntar(pregunta: Pregunta):
                     2. Menciona el nombre del cafe en formato negrita.
                     3. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
                     4. Deja UNA línea en blanco entre cada café.
-                    5. Puedes agregar 2 o 3 emojis, no mas. 
+                    5. Puedes agregar 2 o 3 emojis, no mas.
                     6. Ejemplo de formato CORRECTO:
 
                     - Alacrán: notas de chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
@@ -173,7 +173,7 @@ async def preguntar(pregunta: Pregunta):
                     - Cóndor: notas de caramelo y frutos amarillos. Cuerpo jugoso, acidez equilibrada, Ideal para principiantes o para quienes toman café con leche.
 
                     Responde de forma natural y entusiasta, pero respetando el formato.
-                    
+
                     """
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -293,7 +293,7 @@ async def get_chat():
         padding: 0;
         box-sizing: border-box;
     }
-    
+
     body {
         position: relative;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -305,7 +305,7 @@ async def get_chat():
         align-items: center;
         padding: 16px;
     }
-    
+
     /* Contenedor principal */
     .chat-container {
         width: 100%;
@@ -322,7 +322,7 @@ async def get_chat():
         position: relative;
         z-index: 1;
     }
-    
+
     /* Marca de agua dentro del chat (logo centrado) */
     .chat-container::before {
         content: "";
@@ -340,7 +340,7 @@ async def get_chat():
         pointer-events: none;
         z-index: 0;
     }
-    
+
     /* Logos externos (esquinas) */
     .logo-top-left {
         position: fixed;
@@ -352,7 +352,7 @@ async def get_chat():
         opacity: 0.2;
         pointer-events: none;
     }
-    
+
     .logo-bottom-right {
         position: fixed;
         bottom: 16px;
@@ -363,7 +363,7 @@ async def get_chat():
         opacity: 0.15;
         pointer-events: none;
     }
-    
+
     /* Header */
     .chat-header {
         background: #000000;
@@ -373,18 +373,18 @@ async def get_chat():
         border-bottom: 1px solid #333;
         flex-shrink: 0;
     }
-    
+
     .chat-header h1 {
         font-size: 1.3em;
         margin-bottom: 4px;
         font-weight: 600;
     }
-    
+
     .chat-header p {
         font-size: 0.75em;
         opacity: 0.7;
     }
-    
+
     /* Área de mensajes (con scroll) */
     .chat-messages {
         flex: 1;
@@ -394,22 +394,22 @@ async def get_chat():
         position: relative;
         z-index: 1;
     }
-    
+
     /* Scrollbar personalizada */
     .chat-messages::-webkit-scrollbar {
         width: 5px;
     }
-    
+
     .chat-messages::-webkit-scrollbar-track {
         background: #e0e0e0;
         border-radius: 3px;
     }
-    
+
     .chat-messages::-webkit-scrollbar-thumb {
         background: #888;
         border-radius: 3px;
     }
-    
+
     /* Mensajes */
     .message {
         margin-bottom: 16px;
@@ -417,7 +417,7 @@ async def get_chat():
         align-items: flex-start;
         animation: fadeIn 0.3s ease;
     }
-    
+
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -428,11 +428,11 @@ async def get_chat():
             transform: translateY(0);
         }
     }
-    
+
     .message.user {
         justify-content: flex-end;
     }
-    
+
     .message-content {
         max-width: 80%;
         padding: 10px 16px;
@@ -442,7 +442,7 @@ async def get_chat():
         font-size: 0.95em;
         word-wrap: break-word;
     }
-    
+
     /* Mensajes del usuario */
     .user .message-content {
         background: #000000;
@@ -450,7 +450,7 @@ async def get_chat():
         border-bottom-right-radius: 4px;
         border: 1px solid #333;
     }
-    
+
     /* Mensajes del bot */
     .assistant .message-content {
         background: #ffffff;
@@ -459,27 +459,27 @@ async def get_chat():
         border-bottom-left-radius: 4px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
-    
+
     /* Listas en mensajes del bot */
     .assistant .message-content ul,
     .assistant .message-content ol {
         margin: 6px 0 6px 18px;
     }
-    
+
     .assistant .message-content li {
         margin: 3px 0;
     }
-    
+
     .assistant .message-content p {
         margin: 6px 0;
     }
-    
+
     .assistant .message-content br {
         display: block;
         margin: 6px 0;
         content: "";
     }
-    
+
     /* Indicador de escritura */
     .typing-indicator {
         display: none;
@@ -490,7 +490,7 @@ async def get_chat():
         width: fit-content;
         border-bottom-left-radius: 4px;
     }
-    
+
     .typing-indicator span {
         display: inline-block;
         width: 8px;
@@ -500,15 +500,15 @@ async def get_chat():
         margin: 0 2px;
         animation: typing 1.4s infinite;
     }
-    
+
     .typing-indicator span:nth-child(2) {
         animation-delay: 0.2s;
     }
-    
+
     .typing-indicator span:nth-child(3) {
         animation-delay: 0.4s;
     }
-    
+
     @keyframes typing {
         0%, 60%, 100% {
             transform: translateY(0);
@@ -519,7 +519,7 @@ async def get_chat():
             opacity: 1;
         }
     }
-    
+
     /* Input container */
     .chat-input-container {
         padding: 12px 16px;
@@ -529,7 +529,7 @@ async def get_chat():
         gap: 10px;
         flex-shrink: 0;
     }
-    
+
     /* Campo de entrada */
     .chat-input {
         flex: 1;
@@ -543,17 +543,17 @@ async def get_chat():
         background: #ffffff;
         color: #1a1a1a;
     }
-    
+
     .chat-input:focus {
         border-color: #000000;
         box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
     }
-    
+
     .chat-input::placeholder {
         color: #aaa;
         font-weight: 400;
     }
-    
+
     /* Botón enviar */
     .send-button {
         padding: 12px 24px;
@@ -568,53 +568,53 @@ async def get_chat():
         font-family: inherit;
         white-space: nowrap;
     }
-    
+
     .send-button:hover {
         background: #cc0000;
         transform: scale(0.97);
     }
-    
+
     .send-button:disabled {
         background: #999999;
         cursor: not-allowed;
         transform: none;
     }
-    
+
     /* ========== MEDIA QUERIES (RESPONSIVE) ========== */
-    
+
     /* Tablets y móviles grandes (≤ 768px) */
     @media (max-width: 768px) {
         body {
             padding: 12px;
         }
-        
+
         .chat-container {
             height: 95vh;
             border-radius: 20px;
         }
-        
+
         .chat-header {
             padding: 12px 16px;
         }
-        
+
         .chat-header h1 {
             font-size: 1.1em;
         }
-        
+
         .chat-header p {
             font-size: 0.7em;
         }
-        
+
         .chat-messages {
             padding: 12px;
         }
-        
+
         .message-content {
             max-width: 85%;
             font-size: 0.9em;
             padding: 8px 14px;
         }
-        
+
         .logo-top-left {
             width: 40px;
             height: 40px;
@@ -622,112 +622,112 @@ async def get_chat():
             left: 10px;
             opacity: 0.15;
         }
-        
+
         .logo-bottom-right {
             width: 50px;
             height: 50px;
             bottom: 10px;
             right: 10px;
         }
-        
+
         .chat-container::before {
             width: 150px;
             height: 150px;
         }
-        
+
         .send-button {
             padding: 10px 18px;
             font-size: 0.85em;
         }
-        
+
         .chat-input {
             padding: 10px 16px;
             font-size: 0.9em;
         }
     }
-    
+
     /* Móviles pequeños (≤ 480px) */
     @media (max-width: 480px) {
         .chat-container {
             height: 98vh;
             border-radius: 16px;
         }
-        
+
         .chat-header {
             padding: 10px 12px;
         }
-        
+
         .chat-header h1 {
             font-size: 1em;
         }
-        
+
         .chat-header p {
             font-size: 0.65em;
         }
-        
+
         .chat-messages {
             padding: 10px;
         }
-        
+
         .message-content {
             max-width: 90%;
             font-size: 0.85em;
             padding: 8px 12px;
         }
-        
+
         .chat-input-container {
             padding: 10px 12px;
             gap: 8px;
         }
-        
+
         .chat-input {
             padding: 10px 14px;
             font-size: 0.85em;
         }
-        
+
         .send-button {
             padding: 10px 16px;
             font-size: 0.85em;
         }
-        
+
         .logo-top-left {
             width: 30px;
             height: 30px;
             top: 8px;
             left: 8px;
         }
-        
+
         .logo-bottom-right {
             width: 40px;
             height: 40px;
             bottom: 8px;
             right: 8px;
         }
-        
+
         .chat-container::before {
             width: 120px;
             height: 120px;
         }
     }
-    
+
     /* Ajustes para landscape (horizontal) en móviles */
     @media (max-width: 768px) and (orientation: landscape) {
         .chat-container {
             height: 92vh;
         }
-        
+
         .chat-header {
             padding: 8px 16px;
         }
-        
+
         .chat-header h1 {
             font-size: 0.9em;
         }
-        
+
         .chat-header p {
             display: none;
         }
-        
+
         .chat-messages {
             padding: 8px;
         }
@@ -737,7 +737,7 @@ async def get_chat():
     <body>
         <!-- Logo en esquina superior izquierda -->
         <img src="/static/logo.png" alt="Logo" class="logo-top-left">
-        
+
         <div class="chat-container">
             <div class="chat-header">
                 <h1>☕ Asistente de Cafe</h1>
@@ -755,7 +755,7 @@ async def get_chat():
                 <button class="send-button" id="sendButton" onclick="sendMessage()">Enviar</button>
             </div>
         </div>
-        
+
         <!-- Logo en esquina inferior derecha (semitransparente como marca de agua) -->
         <img src="/static/logo.png" alt="Logo" class="logo-bottom-right">
         <script>

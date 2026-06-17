@@ -144,11 +144,11 @@ async def clasificar_con_ia(mensaje: str) -> str:
                     Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
 
                     - COMPRA: Si el hilo de la conversacion es acerca de recomendar un cafe. Por ejemplo: Si el usuario pide explicacion de los perfiles de cafe y te responde con uno de ellos, junto al metodo recomendarle los cafes que correspondan o consultar el metodo en caso de no tenerlo, si el usuario responde a la pregunta de si el cafe lo toma en espresso o en filtro.
-                    
+
                     - DESCRIPCION_CAFE: El usuario quiere que le DESCRIBAS un café (notas, sabor, origen, características). Ejemplos: "describeme el Alacrán", "qué notas tiene el café", "cómo es ese café", "cuéntame de esos cafés","Que origen tiene el cafe Condor".
-                    
+
                     - DESCRIPCION_FAQ: El usuario quiere que le respondas preguntas tipicas en una cafeteria de especialidad O que le DESCRIBAS un metodo, un perfil o acerca de un tostado. Ejemplo: "¿Qué café me recomiendas si soy principiante?", "¿Recomiéndame un café para filtro?", "¿Cuál es el café más ácido y afrutado?", "Explicame los diferentes perfiles cafe que tienen", "Explicame el cafe exotico","Como se prepara un cafe filtrado?", "Como es el tostado de cafe para espresso?" .
-                    
+
                     - RECORDATORIO: El usuario pregunta sobre cafes que le recomendaste anteriorment. Ejemplos: "que cafes me habias recomendado?", "qué opciones tenia?".
 
                     - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".
