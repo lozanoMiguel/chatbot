@@ -97,4 +97,6 @@ def mock_db_error():
     with patch("app.database.check_connection") as mock:
         mock.side_effect = Exception("Connection refused")
         yield mock
+
+        
  
