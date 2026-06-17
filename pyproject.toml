@@ -1,0 +1,58 @@
+# ==============================================================
+#  pyproject.toml — Configuración centralizada de herramientas
+# ==============================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]           # Dónde buscar los tests
+python_files = ["test_*.py"]   # Patrón de archivos de test
+python_classes = ["Test*"]     # Patrón de clases de test
+python_functions = ["test_*"]  # Patrón de funciones de test
+asyncio_mode = "auto"          # Para tests async automáticos
+addopts = "--tb=short -q"      # Output más limpio por defecto
+
+# ==============================================================
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # Líneas largas (black se encarga)
+    "B008",  # No llames funciones en argumentos default (común en FastAPI)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]   # Permite imports no usados en tests (fixtures)
+
+# ==============================================================
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | __pycache__
+  | \.pytest_cache
+)/
+'''
+
+# ==============================================================
+[tool.coverage.run]
+source = ["app"]               # ← Ajusta al nombre de tu paquete principal
+omit = [
+    "tests/*",
+    "*/migrations/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

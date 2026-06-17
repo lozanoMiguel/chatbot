@@ -1,0 +1,206 @@
+## ============================================================
+##  CI/CD Pipeline — Chatbot FastAPI + RAG + Supabase + Render
+## ============================================================
+##
+##  FLUJO COMPLETO:
+##
+##  Push / PR  →  [CI] lint + tests  →  [CD] build Docker  →  deploy Render
+##                     ↓ falla                 ↓ falla
+##               ❌ bloquea merge        ❌ no se despliega
+##
+## ============================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master] # Despliega solo desde master
+  pull_request:
+    branches: [master] # Valida PRs antes del merge
+
+## ── Variables globales ──────────────────────────────────────
+env:
+  PYTHON_VERSION: "3.11"
+  IMAGE_NAME: chatbot-fastapi # Nombre de tu imagen Docker
+
+## ============================================================
+##  JOB 1: CI — Lint + Tests
+##  Se ejecuta en TODOS los pushes y PRs
+## ============================================================
+jobs:
+  ci:
+    name: ✅ CI — Lint & Tests
+    runs-on: ubuntu-latest
+
+    ## Servicios auxiliares (levantan contenedores Docker en CI)
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    ## Variables de entorno para los tests
+    ## Los valores reales vienen de GitHub Secrets (no del código)
+    env:
+      DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/testdb
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }} # Key de test/sandbox
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      ENVIRONMENT: test
+
+    steps:
+      ## ── 1. Obtener el código ──────────────────────────────
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      ## ── 2. Configurar Python ─────────────────────────────
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip # Cachea dependencias para builds más rápidos
+
+      ## ── 3. Instalar dependencias ─────────────────────────
+      - name: 📦 Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt   # pytest, ruff, httpx, etc.
+
+      ## ── 4. Linting — Calidad de código ──────────────────
+      - name: 🔍 Ruff — Linting
+        run: ruff check .
+        # Ruff es más rápido que flake8. Si usas otro linter, ajusta aquí.
+        # Alternativa con flake8: flake8 . --max-line-length=100
+
+      ## ── 5. Formato — Black ───────────────────────────────
+      - name: 🎨 Black — Verificar formato
+        run: black --check .
+        # Si prefieres no usar black, elimina este step.
+
+      ## ── 6. Type checking — mypy (opcional) ──────────────
+      # - name: 🔬 Mypy — Type checking
+      #   run: mypy app/ --ignore-missing-imports
+
+      ## ── 7. Ejecutar tests ────────────────────────────────
+      - name: 🧪 Pytest — Ejecutar tests
+        run: |
+          pytest tests/ \
+            --verbose \
+            --tb=short \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=60    # Falla si la cobertura baja del 60%
+
+      ## ── 8. Subir reporte de cobertura (opcional) ─────────
+      - name: 📊 Upload cobertura a Codecov
+        uses: codecov/codecov-action@v4
+        if: always() # Sube aunque fallen los tests
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: false # No bloquea el pipeline si falla Codecov
+
+  ## ============================================================
+  ##  JOB 2: CD — Build Docker + Deploy a Render
+  ##  Solo se ejecuta si CI pasa Y estamos en master
+  ## ============================================================
+  cd:
+    name: 🚀 CD — Build & Deploy
+    runs-on: ubuntu-latest
+    needs: ci # ← BLOQUEANTE: no corre si CI falla
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      ## ── 1. Checkout ───────────────────────────────────────
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      ## ── 2. Build de la imagen Docker ─────────────────────
+      - name: 🐳 Build imagen Docker
+        run: |
+          docker build \
+            --tag ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --tag ${{ env.IMAGE_NAME }}:latest \
+            --label "git-commit=${{ github.sha }}" \
+            --label "build-date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            .
+
+      ## ── 3. (Opcional) Push a Docker Hub ──────────────────
+      ## Descomenta si quieres guardar la imagen en un registry
+      # - name: 🔐 Login a Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #
+      # - name: 📤 Push imagen a Docker Hub
+      #   run: |
+      #     docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+      #     docker push ${{ env.IMAGE_NAME }}:latest
+
+      ## ── 4. Deploy a Render ───────────────────────────────
+      ## Render expone un Deploy Hook URL que dispara el deploy
+      ## Guárdalo en GitHub Secrets como RENDER_DEPLOY_HOOK_URL
+      - name: 🌐 Trigger deploy en Render
+        run: |
+          curl -s --fail \
+            -X POST \
+            "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+          && echo "✅ Deploy en Render disparado correctamente" \
+          || (echo "❌ Error al contactar Render" && exit 1)
+
+      ## ── 5. Esperar y verificar el deploy ─────────────────
+      - name: ⏳ Esperar que Render complete el deploy
+        run: |
+          echo "Esperando 60 segundos para que Render complete el deploy..."
+          sleep 60
+
+      ## ── 6. Health check post-deploy ──────────────────────
+      ## Verifica que la app respondió correctamente tras el deploy
+      - name: 🏥 Health check post-deploy
+        run: |
+          HEALTH_URL="${{ secrets.RENDER_APP_URL }}/health"
+          echo "Verificando: $HEALTH_URL"
+
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Health check OK (intento $i)"
+              exit 0
+            fi
+            echo "⏳ Intento $i: status $STATUS — reintentando en 15s..."
+            sleep 15
+          done
+
+          echo "❌ Health check falló después de 5 intentos"
+          exit 1
+
+      ## ── 7. Notificación de éxito (opcional) ──────────────
+      ## Descomenta y configura según tu canal de notificaciones
+      # - name: 📣 Notificar deploy exitoso en Slack
+      #   if: success()
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       {"text": "✅ Deploy exitoso en producción — commit ${{ github.sha }}"}
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      ## ── 8. Rollback automático si falla el health check ──
+      ## (Avanzado) Si el health check falla, dispara el deploy anterior
+      # - name: 🔄 Rollback si health check falla
+      #   if: failure()
+      #   run: |
+      #     echo "Health check falló — considera revertir manualmente en Render"
+      #     # Aquí podrías llamar a la API de Render para hacer rollback
