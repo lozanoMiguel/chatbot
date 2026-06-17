@@ -78,7 +78,9 @@ jobs:
 
       ## ── 4. Linting — Calidad de código ──────────────────
       - name: 🔍 Ruff — Linting
-        run: ruff check .
+        run: |
+          ruff check .
+          ruff format --check .
         # Ruff es más rápido que flake8. Si usas otro linter, ajusta aquí.
         # Alternativa con flake8: flake8 . --max-line-length=100
 
