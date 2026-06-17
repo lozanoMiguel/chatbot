@@ -2,7 +2,7 @@ import sys
 
 import pysqlite3
 
-sys.modules['sqlite3'] = pysqlite3
+sys.modules["sqlite3"] = pysqlite3
 import glob
 
 from dotenv import load_dotenv
@@ -25,9 +25,7 @@ print(f"Total documentos cargados: {len(documents)}")
 
 # 2. Dividir en fragmentos (chunks) para una búsqueda más precisa
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=800,
-    chunk_overlap=100,
-    separators=["\n\n", "\n", " ", ""]
+    chunk_size=800, chunk_overlap=100, separators=["\n\n", "\n", " ", ""]
 )
 chunks = text_splitter.split_documents(documents)
 print(f"Fragmentos generados: {len(chunks)}")
@@ -35,8 +33,6 @@ print(f"Fragmentos generados: {len(chunks)}")
 # 3. Generar embeddings y guardar en Chroma
 embeddings = OpenAIEmbeddings()  # Usa la variable OPENAI_API_KEY de tu archivo .env
 vectorstore = Chroma.from_documents(
-    documents=chunks,
-    embedding=embeddings,
-    persist_directory="./chroma_db"
+    documents=chunks, embedding=embeddings, persist_directory="./chroma_db"
 )
 print("✅ Índice RAG guardado en ./chroma_db")

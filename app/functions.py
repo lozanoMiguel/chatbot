@@ -8,23 +8,26 @@ from app.config import OPENAI_API_KEY
 # Cliente OpenAI (reutilizamos el mismo)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-#consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
+
+# consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
 def get_metodo(mensaje: str) -> str:
-    if any (palabra in mensaje for palabra in ["espresso", "expresso","espreso","expreso"]):
-        return  "espresso"
-    elif any(palabra in mensaje for palabra in ["filtro","filter", "filtrado"]):
+    if any(palabra in mensaje for palabra in ["espresso", "expresso", "espreso", "expreso"]):
+        return "espresso"
+    elif any(palabra in mensaje for palabra in ["filtro", "filter", "filtrado"]):
         return "filtro"
     return ""
+
 
 def get_perfil(mensaje: str) -> str:
 
     if "tradicional" in mensaje:
         return "tradicional"
     elif any(palabra in mensaje for palabra in ["exotico", "exotic"]):
-        return"exotico"
-    elif any(palabra in mensaje for palabra in ["funky","fanky","fonky"]):
+        return "exotico"
+    elif any(palabra in mensaje for palabra in ["funky", "fanky", "fonky"]):
         return "funky"
     return ""
+
 
 def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     """Recomienda cafés según método y perfil, y opcionalmente guarda la lista en el estado"""
@@ -39,6 +42,7 @@ def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     # Guardar en el estado si se proporciona session_id
     if session_id and cafes:
         from app.main import estado_usuario
+
         estado_usuario[session_id]["ultimos_cafes"] = cafes
 
     if not cafes:
@@ -48,10 +52,11 @@ def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> str:
     else:
         return f"Para {metodo} y perfil {perfil}, te recomiendo: {', '.join(cafes[:-1])} y {cafes[-1]}."
 
+
 def normalizar_texto(texto: str) -> str:
     """
     Normaliza el texto: minúsculas, sin acentos, sin caracteres especiales.
-    
+
     Ejemplos:
         "¿Cómo tomas tu café?" → "como tomas tu cafe"
         "¡Hola! ¿Qué tal?" → "hola que tal"
@@ -62,17 +67,18 @@ def normalizar_texto(texto: str) -> str:
 
     # 2. Eliminar acentos (normalizar a forma ASCII)
     #    'café' → 'cafe', 'té' → 'te', 'más' → 'mas'
-    texto = unicodedata.normalize('NFKD', texto)
-    texto = texto.encode('ASCII', 'ignore').decode('ASCII')
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ASCII", "ignore").decode("ASCII")
 
     # 3. Eliminar signos de puntuación y caracteres especiales
     #    Solo mantenemos letras, números y espacios
-    texto = re.sub(r'[^a-z0-9\s]', '', texto)
+    texto = re.sub(r"[^a-z0-9\s]", "", texto)
 
     # 4. Eliminar espacios múltiples y trim
-    texto = re.sub(r'\s+', ' ', texto).strip()
+    texto = re.sub(r"\s+", " ", texto).strip()
 
     return texto
+
 
 def clasificar_intencion_simple(mensaje: str) -> str:
     """
@@ -90,22 +96,39 @@ def clasificar_intencion_simple(mensaje: str) -> str:
         return "simple_saludo"
 
     # ===== PALABRAS CLARAS DE COMPRA =====
-    if any(phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]):
+    if any(
+        phrase in user_norm for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil"]
+    ):
         return "logica_compra"
 
     # ===== PALABRAS CLARAS DE RECORDATORIO =====
-    if any(phrase in user_norm for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]):
+    if any(
+        phrase in user_norm for phrase in ["que metodo", "que perfil", "que elegi", "como tomo"]
+    ):
         return "pregunta_recordatorio"
 
     # ===== SI EL MENSAJE ES MUY CORTO (posible respuesta a pregunta) =====
     if len(user_norm.split()) <= 2:
         palabras = user_norm.split()
         for p in palabras:
-            if p in ["si", "sip", "claro", "correcto", "vale", "ok", "espresso", "filtro", "tradicional", "exotico", "funky"]:
+            if p in [
+                "si",
+                "sip",
+                "claro",
+                "correcto",
+                "vale",
+                "ok",
+                "espresso",
+                "filtro",
+                "tradicional",
+                "exotico",
+                "funky",
+            ]:
                 return "logica_compra"
 
     # No se pudo clasificar con reglas
     return None
+
 
 async def clasificar_con_ia(mensaje: str) -> str:
     """
@@ -115,7 +138,9 @@ async def clasificar_con_ia(mensaje: str) -> str:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": """
+            {
+                "role": "system",
+                "content": """
                     Eres un clasificador de intenciones. Analiza el mensaje del usuario y responde SOLO con una de estas palabras:
 
                     - COMPRA: Si el hilo de la conversacion es acerca de recomendar un cafe. Por ejemplo: Si el usuario pide explicacion de los perfiles de cafe y te responde con uno de ellos, junto al metodo recomendarle los cafes que correspondan o consultar el metodo en caso de no tenerlo, si el usuario responde a la pregunta de si el cafe lo toma en espresso o en filtro.
@@ -129,22 +154,23 @@ async def clasificar_con_ia(mensaje: str) -> str:
                     - SALUDO: El usuario saluda, agradece o se despide. Ejemplos: "hola", "gracias", "adiós", "buenos días".
 
                     Responde solo con la palabra: DESCRIPCION, COMPRA, RECORDATORIO o SALUDO.
-                    """},
-            {"role": "user", "content": mensaje}
+                    """,
+            },
+            {"role": "user", "content": mensaje},
         ],
         temperature=0,
-        max_tokens=20
+        max_tokens=20,
     )
 
     clasificacion = response.choices[0].message.content.strip().lower()
 
     # Mapear la respuesta de la IA a nuestros códigos internos
     mapeo = {
-        "descripcion_faq":"ia_faq",
+        "descripcion_faq": "ia_faq",
         "descripcion_cafe": "ia_descripcion_cafe",
         "compra": "logica_compra",
         "recordatorio": "pregunta_recordatorio",
-        "saludo": "simple_saludo"
+        "saludo": "simple_saludo",
     }
 
     return mapeo.get(clasificacion, "logica_compra")

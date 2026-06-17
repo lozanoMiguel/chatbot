@@ -30,6 +30,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F401"]   # Permite imports no usados en tests (fixtures)
+"app/rag.py" = ["E402"]
+"indexar_documentos.py" = ["E402"]
 
 # ==============================================================
 [tool.black]

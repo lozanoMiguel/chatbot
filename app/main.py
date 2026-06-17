@@ -27,6 +27,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Ahora guarda también la lista de últimos cafés recomendados
 estado_usuario = defaultdict(lambda: {"metodo": None, "perfil": None, "ultimos_cafes": []})
 
+
 # ==================== LIFESPAN ====================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,19 +35,23 @@ async def lifespan(app: FastAPI):
     yield
     print("🛑 Servidor detenido")
 
+
 # ==================== APP ====================
 app = FastAPI(title="CafBot - Asistente de Café", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+
 # ==================== MODELOS ====================
 class Pregunta(BaseModel):
     mensaje: str
     session_id: str
 
+
 class Respuesta(BaseModel):
     respuesta: str
+
 
 # ==================== ENDPOINT PRINCIPAL ====================
 @app.post("/preguntar", response_model=Respuesta)
@@ -62,7 +67,7 @@ async def preguntar(pregunta: Pregunta):
         user_lower = user_message.lower()
 
         metodos = ["espresso", "espreso", "expreso", "expresso", "filtro", "filtrado", "filter"]
-        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fanky" "funky","fonky"]
+        perfiles = ["tradicionales", "tradicional", "exotico", "exotic", "fankyfunky", "fonky"]
 
         for met in metodos:
             if met in user_lower:
@@ -72,15 +77,17 @@ async def preguntar(pregunta: Pregunta):
             if per in user_lower:
                 estado_usuario[session_id]["perfil"] = get_perfil(user_lower)
 
-        #asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriormente, utilizamos dicha variable sin tocar la original: estado_usuario)
+        # asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriormente, utilizamos dicha variable sin tocar la original: estado_usuario)
         estado = estado_usuario[session_id]
-        print(f"   📊 Estadooo: método={estado['metodo']}, perfil={estado['perfil']}, ultimos_cafes={estado['ultimos_cafes']}")
+        print(
+            f"   📊 Estadooo: método={estado['metodo']}, perfil={estado['perfil']}, ultimos_cafes={estado['ultimos_cafes']}"
+        )
 
         intencion = clasificar_intencion_simple(user_lower)
         print(f"   🧠 Intención: {intencion}")
 
         if intencion is None:
-        # Si las reglas simples no pudieron clasificar, usamos IA
+            # Si las reglas simples no pudieron clasificar, usamos IA
             print("   🤔 Mensaje ambiguo, usando IA para clasificar...")
             intencion = await clasificar_con_ia(user_message)
             print(f"   🧠 IA clasificó como: {intencion}")
@@ -92,21 +99,34 @@ async def preguntar(pregunta: Pregunta):
             print("   🤖 Usando IA + RAG")
             cafes_mencionados = []
 
-            todos_los_cafes = ["Alacrán", "Cóndor", "Lince", "Yurumi",
-                       "Correcaminos", "Dimeti", "Delfín Rosado",
-                       "Puma", "Nebiri", "Coyote"]
+            todos_los_cafes = [
+                "Alacrán",
+                "Cóndor",
+                "Lince",
+                "Yurumi",
+                "Correcaminos",
+                "Dimeti",
+                "Delfín Rosado",
+                "Puma",
+                "Nebiri",
+                "Coyote",
+            ]
 
             # PRIORIDAD 1: Usar los cafés ya fueron consultados
 
-            #revisa en el mensaje si el usuario hace mencion a un cafe en particular utilizando todos nuestros cafes y lo matchea con la consulta
+            # revisa en el mensaje si el usuario hace mencion a un cafe en particular utilizando todos nuestros cafes y lo matchea con la consulta
             for cafe in todos_los_cafes:
-                cafe_normalizado = normalizar_texto(cafe) #normaliza el cafe que coincidió para buscarlo en el mensaje pero agrega el cafe sin normalizar para la busqueda en el indice rag
+                cafe_normalizado = normalizar_texto(
+                    cafe
+                )  # normaliza el cafe que coincidió para buscarlo en el mensaje pero agrega el cafe sin normalizar para la busqueda en el indice rag
                 if cafe_normalizado in user_lower:
                     cafes_mencionados.append(cafe)
 
             if cafes_mencionados:
                 cafes_a_describir = cafes_mencionados
-                print(f"Usuario menciono especificamente{cafes_mencionados} verificacion: {cafes_a_describir}")
+                print(
+                    f"Usuario menciono especificamente{cafes_mencionados} verificacion: {cafes_a_describir}"
+                )
             elif estado.get("ultimos_cafes", []):
                 cafes_a_describir = estado.get("ultimos_cafes", [])
                 print("Usando ultimos cafes")
@@ -122,7 +142,6 @@ async def preguntar(pregunta: Pregunta):
                 cafes_a_describir = matriz_cafes.get((estado["metodo"], estado["perfil"]), [])
                 print(f"   📌 Usando matriz: {cafes_a_describir}")
 
-
             if cafes_a_describir:
                 # Buscar contexto SOLO para esos cafés
                 contexto_parts = []
@@ -134,7 +153,7 @@ async def preguntar(pregunta: Pregunta):
                 contexto = "\n\n".join(contexto_parts)
 
                 system_prompt = f"""
-                    Eres dueño y tostador en una cafeteria que vende su propio cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {', '.join(cafes_a_describir)}.
+                    Eres dueño y tostador en una cafeteria que vende su propio cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes_a_describir)}.
 
                     No menciones ningún otro café que no esté en esta lista.
 
@@ -160,19 +179,21 @@ async def preguntar(pregunta: Pregunta):
                     model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message}
+                        {"role": "user", "content": user_message},
                     ],
                     temperature=0.3,
-                    max_tokens=500
+                    max_tokens=500,
                 )
                 respuesta_texto = response.choices[0].message.content
             else:
-                respuesta_texto= "No tengo información sobre esos cafés. ¿Podrías especificar cuál te interesa?"
+                respuesta_texto = (
+                    "No tengo información sobre esos cafés. ¿Podrías especificar cuál te interesa?"
+                )
 
         # ========== RUTA 2: IA descripciones y consultas ==========
         elif intencion == "ia_faq":
             contexto = buscar_contexto(user_lower)
-            system_prompt =  f"""
+            system_prompt = f"""
                                 Eres un experto en el mundo del cafe de especialidad, tienes bastos conocimientos sobre tostado de cafe, sabes recomendar acertadamente y eres un excelso barista.
                                 Usa SOLO el siguiente contexto para responder.
 
@@ -184,13 +205,13 @@ async def preguntar(pregunta: Pregunta):
                                 - Puedes utilizar emoticones si deseas, 2 o 3 no mas.
                                 """
             response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
+                model="gpt-4o-mini",
+                messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
+                    {"role": "user", "content": user_message},
                 ],
                 temperature=0.5,
-                max_tokens=500
+                max_tokens=500,
             )
             respuesta_texto = response.choices[0].message.content
 
@@ -199,17 +220,21 @@ async def preguntar(pregunta: Pregunta):
             print("   📝 Usando recordatorio de estado")
 
             if estado["ultimos_cafes"]:
-                cafes = estado['ultimos_cafes']
+                cafes = estado["ultimos_cafes"]
                 respuesta_texto = f"Estos son los cafes que te recomendé anteriormente: {', '.join(cafes[:-1])} y {cafes[-1]}"
             else:
-                respuesta_texto = "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
+                respuesta_texto = (
+                    "Aún no me has dicho cómo tomas tu café. ¿En máquina de espresso o en filtro?"
+                )
 
         # ========== RUTA 4: Saludos y agradecimientos ==========
         elif intencion == "simple_saludo":
             if "gracias" in user_lower or "graciass" in user_lower:
                 respuesta_texto = "¡De nada! Me alegra haberte ayudado. ¿Hay algo más en lo que pueda asistirte? ☕"
             elif any(word in user_lower for word in ["adios", "chao", "hasta luego"]):
-                respuesta_texto = "¡Gracias por consultarnos! Vuelve cuando quieras más café. ¡Hasta luego! ☕"
+                respuesta_texto = (
+                    "¡Gracias por consultarnos! Vuelve cuando quieras más café. ¡Hasta luego! ☕"
+                )
             else:
                 respuesta_texto = "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
 
@@ -233,8 +258,10 @@ async def preguntar(pregunta: Pregunta):
     except Exception as e:
         print(f"❌ ERROR: {e}")
         import traceback
+
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}") from e
+
 
 # ==================== ENDPOINT DE DEPURACIÓN ====================
 @app.get("/debug/estado/{session_id}")
@@ -245,8 +272,9 @@ async def debug_estado(session_id: str):
         "session_id": session_id,
         "metodo": estado["metodo"],
         "perfil": estado["perfil"],
-        "ultimos_cafes": estado["ultimos_cafes"]
+        "ultimos_cafes": estado["ultimos_cafes"],
     }
+
 
 # ==================== HTML ====================
 @app.get("/", response_class=HTMLResponse)

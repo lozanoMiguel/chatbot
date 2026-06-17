@@ -1,10 +1,11 @@
 """
 conftest.py — Fixtures compartidas para todos los tests.
- 
+
 pytest las carga automáticamente. Aquí centralizamos:
 - El cliente de test de FastAPI
 - Los mocks de OpenAI, RAG y Supabase
 """
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -43,7 +44,7 @@ def mock_openai():
     """
     Mock de la llamada a OpenAI GPT-4o-mini.
     Evita costos y dependencia de red en CI.
- 
+
     Ajusta el path según cómo importas OpenAI en tu código.
     Ejemplos:
       'app.services.llm.openai.ChatCompletion.create'
@@ -51,11 +52,7 @@ def mock_openai():
     """
     with patch("openai.chat.completions.create") as mock:
         mock.return_value = MagicMock(
-            choices=[
-                MagicMock(
-                    message=MagicMock(content="Respuesta de prueba del chatbot.")
-                )
-            ]
+            choices=[MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))]
         )
         yield mock
 
@@ -65,7 +62,7 @@ def mock_rag():
     """
     Mock del retriever vectorial (Supabase pgvector / FAISS / etc).
     Devuelve documentos de prueba sin consultar la DB vectorial.
- 
+
     Ajusta el path al módulo donde inicializas tu retriever.
     """
     with patch("app.rag.retriever.get_relevant_documents") as mock:
@@ -96,5 +93,3 @@ def mock_db_error():
     with patch("app.database.check_connection") as mock:
         mock.side_effect = Exception("Connection refused")
         yield mock
-
-
