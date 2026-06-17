@@ -83,7 +83,8 @@ jobs:
           ruff format --check .
         # Ruff es más rápido que flake8. Si usas otro linter, ajusta aquí.
         # Alternativa con flake8: flake8 . --max-line-length=100
-
+      - name: Show Ruff diff
+        run: ruff format --diff app/functions.py
       ## ── 5. Formato — Black ───────────────────────────────
       #- name: 🎨 Black — Verificar formato
       # run: black --check .

@@ -12,8 +12,12 @@ addopts = "--tb=short -q"      # Output más limpio por defecto
 
 # ==============================================================
 [tool.ruff]
-line-length = 100
+line-length = 88
 target-version = "py311"
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
 
 [tool.ruff.lint]
 select = [
