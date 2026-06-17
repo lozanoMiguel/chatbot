@@ -124,3 +124,4 @@ docker pull migloz/cafbot:latest
 docker run -d -p 8000:8000 --env-file .env migloz/cafbot:latest
  ```
 O modifica el docker-compose.yml para usar image: migloz/cafbot:latest en lugar de build: ..
+# Comentario de prueba
