@@ -76,23 +76,12 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt   # pytest, ruff, httpx, etc.
 
-      ## ── 4. Linting — Calidad de código ──────────────────
-      - name: 🔍 Ruff — Linting
-        run: |
-          ruff check .
-          ruff format --check .
-        # Ruff es más rápido que flake8. Si usas otro linter, ajusta aquí.
-        # Alternativa con flake8: flake8 . --max-line-length=100
-      - name: Show Ruff diff
-        run: ruff format --diff app/functions.py
+      ## ── 4. Linting y Formato con Ruff — Calidad de código ──────────────────
+      - name: 🔍 Ruff — Lint
+        run: ruff check .
 
-      - name: Auto-format with Ruff
-        run: |
-          ruff format .
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git diff --staged --quiet || git commit -m "Auto-format code with Ruff" && git push
+      - name: 🎨 Ruff — Verificar formato
+        run: ruff format --check .
       ## ── 5. Formato — Black ───────────────────────────────
       #- name: 🎨 Black — Verificar formato
       # run: black --check .
