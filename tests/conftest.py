@@ -40,21 +40,20 @@ def mock_openai():
 
 @pytest.fixture
 def mock_rag():
-    """Mock de ChromaDB para devolver documentos de prueba."""
-    with patch("app.rag.vectorstore.similarity_search") as mock:
-        # Crear documentos de prueba
-        doc1 = MagicMock()
-        doc1.page_content = "Documento de prueba 1: notas de chocolate y almendra"
-        doc1.metadata = {"source": "test"}
+    """Mock de la búsqueda en ChromaDB."""
+    from app.rag import get_vectorstore
 
-        doc2 = MagicMock()
-        doc2.page_content = (
-            "Documento de prueba 2: notas de caramelo y frutos amarillos"
-        )
-        doc2.metadata = {"source": "test"}
-
-        # Devolver una lista de documentos
-        mock.return_value = [doc1, doc2]
+    with patch("app.rag.get_vectorstore") as mock:
+        mock_vectorstore = MagicMock()
+        mock_vectorstore.similarity_search.return_value = [
+            MagicMock(
+                page_content="Documento de prueba 1", metadata={"source": "test"}
+            ),
+            MagicMock(
+                page_content="Documento de prueba 2", metadata={"source": "test"}
+            ),
+        ]
+        mock.return_value = mock_vectorstore
         yield mock
 
 

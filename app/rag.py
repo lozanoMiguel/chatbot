@@ -9,24 +9,37 @@ from langchain_openai import OpenAIEmbeddings
 
 from app.config import RAG_K_FRAGMENTS, VECTOR_STORE_PATH
 
-embeddings = OpenAIEmbeddings()
-vectorstore = Chroma(persist_directory=VECTOR_STORE_PATH, embedding_function=embeddings)
+_embeddings = None
+_vectorstore = None
+
+
+def get_embeddings():
+    """
+    Retorna el objeto embeddings, inicializándolo solo cuando se necesita.
+    """
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = OpenAIEmbeddings()
+    return _embeddings
+
+
+def get_vectorstore():
+    """Retorna el vectorstore, inicializándolo solo cuando se necesita."""
+    global _vectorstore
+    if _vectorstore is None:
+        embeddings = get_embeddings()
+        _vectorstore = Chroma(
+            persist_directory=VECTOR_STORE_PATH, embedding_function=embeddings
+        )
+    return _vectorstore
 
 
 def buscar_contexto(pregunta: str, filtro_nombre: str = None) -> str:
-    """
-    Busca fragmentos relevantes en la base de conocimiento RAG.
-
-    Args:
-        pregunta: Texto de búsqueda (puede ser el nombre de un café)
-        filtro_nombre: Si se proporciona, solo devuelve fragmentos que contengan este texto exacto
-    """
+    """Busca fragmentos relevantes en la base de conocimiento RAG."""
+    vectorstore = get_vectorstore()
     docs = vectorstore.similarity_search(pregunta, k=RAG_K_FRAGMENTS)
-
-    # Si hay filtro por nombre, filtrar los resultados
     if filtro_nombre:
         docs = [
             doc for doc in docs if filtro_nombre.lower() in doc.page_content.lower()
         ]
-        print(f"📄 Documentos encontrados: {len(docs)}")
     return "\n\n".join([doc.page_content for doc in docs])
