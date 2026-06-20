@@ -7,10 +7,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from openai import OpenAI
 from pydantic import BaseModel
 
-from app.config import DATABASE_URL, OPENAI_API_KEY
+from app.config import DATABASE_URL
 from app.database import init_db, save_message
 from app.functions import (
     clasificar_con_ia,
@@ -22,9 +21,6 @@ from app.functions import (
     recomendar_cafe,
 )
 from app.rag import buscar_contexto
-
-# Cliente OpenAI
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ==================== ESTADO DE CONVERSACIÓN ====================
 # Ahora guarda también la lista de últimos cafés recomendados
