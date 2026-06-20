@@ -6,7 +6,17 @@ from openai import OpenAI
 from app.config import OPENAI_API_KEY
 
 # Cliente OpenAI (reutilizamos el mismo)
-client = OpenAI(api_key=OPENAI_API_KEY)
+_openai_client = None
+
+def get_openai_client():
+    """
+    Retorna el cliente de OpenAI, inicializándolo solo cuando se llama por primera vez.
+    Esto evita errores de importación cuando no hay API key (ej. en el CI).
+    """
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    return _openai_client
 
 
 # consultar con deepseek acerca de una manera de simplificar esta funcion y get_perfil
@@ -141,6 +151,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
     Usa OpenAI para clasificar mensajes que las reglas simples no pudieron procesar.
     Retorna: 'compra','ia_descripcion_cafe', 'ia_faq', 'pregunta_recordatorio', 'simple_saludo'
     """
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[

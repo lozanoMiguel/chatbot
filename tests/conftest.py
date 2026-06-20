@@ -26,14 +26,14 @@ def chat_request(client, mensaje, session_id=None):
 
 @pytest.fixture
 def mock_openai():
-    """Mock de OpenAI para que no haga llamadas reales."""
-    with patch("app.main.client.chat.completions.create") as mock:
-        # Simular una respuesta de OpenAI
+    """Mock de OpenAI."""
+    from app.functions import get_openai_client
+    with patch("app.functions.get_openai_client") as mock:
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))
         ]
-        mock.return_value = mock_response
+        mock.return_value.chat.completions.create.return_value = mock_response
         yield mock
 
 
