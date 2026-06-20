@@ -1,18 +1,16 @@
 from collections import defaultdict
 from contextlib import asynccontextmanager
 
+import aiosqlite
+import asyncpg
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 from pydantic import BaseModel
-import aiosqlite
-import asyncpg
-import uuid
-from app.config import DATABASE_URL
 
-from app.config import OPENAI_API_KEY
+from app.config import DATABASE_URL, OPENAI_API_KEY
 from app.database import init_db, save_message
 from app.functions import (
     clasificar_con_ia,
@@ -55,7 +53,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 class Pregunta(BaseModel):
     mensaje: str
     session_id: str
-    
+
 class Respuesta(BaseModel):
     respuesta: str
 
@@ -64,7 +62,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     respuesta: str
-    
+
 # ==================== ENDPOINT PRINCIPAL ====================
 @app.post("/preguntar", response_model=Respuesta)
 async def preguntar(pregunta: Pregunta):
@@ -324,19 +322,19 @@ async def health_check():
                 await db.execute("SELECT 1")
     except Exception:
         db_status = "disconnected"
-    
+
     llm_status = "connected"
     try:
-        response = client.chat.completions.create(
+        client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "test"}],
             max_tokens=5
         )
     except Exception:
         llm_status = "disconnected"
-    
+
     overall_status = "ok" if db_status == "connected" and llm_status == "connected" else "degraded"
-    
+
     return {
         "status": overall_status,
         "database": db_status,

@@ -1,12 +1,15 @@
-import sys
 import os
+import sys
 import uuid
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.main import app
+
 
 @pytest.fixture
 def client():
@@ -15,7 +18,7 @@ def client():
 def chat_request(client, mensaje, session_id=None):
     if session_id is None:
         session_id = f"test_{uuid.uuid4().hex[:8]}"
-    
+
     payload = {
         "mensaje": mensaje,
         "session_id": session_id
@@ -44,11 +47,11 @@ def mock_rag():
         doc1 = MagicMock()
         doc1.page_content = "Documento de prueba 1: notas de chocolate y almendra"
         doc1.metadata = {"source": "test"}
-        
+
         doc2 = MagicMock()
         doc2.page_content = "Documento de prueba 2: notas de caramelo y frutos amarillos"
         doc2.metadata = {"source": "test"}
-        
+
         # Devolver una lista de documentos
         mock.return_value = [doc1, doc2]
         yield mock
