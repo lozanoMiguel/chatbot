@@ -54,14 +54,18 @@ class Pregunta(BaseModel):
     mensaje: str
     session_id: str
 
+
 class Respuesta(BaseModel):
     respuesta: str
+
 
 class ChatRequest(BaseModel):
     mensaje: str
 
+
 class ChatResponse(BaseModel):
     respuesta: str
+
 
 # ==================== ENDPOINT PRINCIPAL ====================
 @app.post("/preguntar", response_model=Respuesta)
@@ -309,6 +313,7 @@ async def debug_estado(session_id: str):
         "ultimos_cafes": estado["ultimos_cafes"],
     }
 
+
 # ==================== ENDPOINT PARA VERIFICACION QUE EL SERVICIO ESTA VIVO ====================
 @app.get("/health")
 async def health_check():
@@ -328,19 +333,22 @@ async def health_check():
         client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "test"}],
-            max_tokens=5
+            max_tokens=5,
         )
     except Exception:
         llm_status = "disconnected"
 
-    overall_status = "ok" if db_status == "connected" and llm_status == "connected" else "degraded"
+    overall_status = (
+        "ok" if db_status == "connected" and llm_status == "connected" else "degraded"
+    )
 
     return {
         "status": overall_status,
         "database": db_status,
         "llm": llm_status,
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
+
 
 # ==================== HTML ====================
 @app.get("/", response_class=HTMLResponse)

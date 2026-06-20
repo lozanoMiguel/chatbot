@@ -11,6 +11,7 @@ async def check_connection():
     await conn.close()
     return True
 
+
 async def init_db():
     flag = 0
     if DATABASE_URL.startswith("postgresql"):

@@ -15,14 +15,12 @@ from app.main import app
 def client():
     return TestClient(app)
 
+
 def chat_request(client, mensaje, session_id=None):
     if session_id is None:
         session_id = f"test_{uuid.uuid4().hex[:8]}"
 
-    payload = {
-        "mensaje": mensaje,
-        "session_id": session_id
-    }
+    payload = {"mensaje": mensaje, "session_id": session_id}
     return client.post("/preguntar", json=payload)
 
 
@@ -49,7 +47,9 @@ def mock_rag():
         doc1.metadata = {"source": "test"}
 
         doc2 = MagicMock()
-        doc2.page_content = "Documento de prueba 2: notas de caramelo y frutos amarillos"
+        doc2.page_content = (
+            "Documento de prueba 2: notas de caramelo y frutos amarillos"
+        )
         doc2.metadata = {"source": "test"}
 
         # Devolver una lista de documentos
@@ -61,9 +61,11 @@ def mock_rag():
 def mock_db():
     """Mock de save_message en app.main (el lugar donde se usa)."""
     import app.main
+
     with patch.object(app.main, "save_message") as mock:
         mock.return_value = None
         yield mock
+
 
 @pytest.fixture
 def mock_db_error():
