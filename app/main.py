@@ -7,6 +7,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 from pydantic import BaseModel
+import aiosqlite
+import asyncpg
+import uuid
+from app.config import DATABASE_URL
 
 from app.config import OPENAI_API_KEY
 from app.database import init_db, save_message
@@ -51,12 +55,16 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 class Pregunta(BaseModel):
     mensaje: str
     session_id: str
-
-
+    
 class Respuesta(BaseModel):
     respuesta: str
 
+class ChatRequest(BaseModel):
+    mensaje: str
 
+class ChatResponse(BaseModel):
+    respuesta: str
+    
 # ==================== ENDPOINT PRINCIPAL ====================
 @app.post("/preguntar", response_model=Respuesta)
 async def preguntar(pregunta: Pregunta):
@@ -303,6 +311,38 @@ async def debug_estado(session_id: str):
         "ultimos_cafes": estado["ultimos_cafes"],
     }
 
+# ==================== ENDPOINT PARA VERIFICACION QUE EL SERVICIO ESTA VIVO ====================
+@app.get("/health")
+async def health_check():
+    db_status = "connected"
+    try:
+        if DATABASE_URL.startswith("postgresql"):
+            conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
+            await conn.close()
+        else:
+            async with aiosqlite.connect(DATABASE_URL) as db:
+                await db.execute("SELECT 1")
+    except Exception:
+        db_status = "disconnected"
+    
+    llm_status = "connected"
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=5
+        )
+    except Exception:
+        llm_status = "disconnected"
+    
+    overall_status = "ok" if db_status == "connected" and llm_status == "connected" else "degraded"
+    
+    return {
+        "status": overall_status,
+        "database": db_status,
+        "llm": llm_status,
+        "version": "1.0.0"
+    }
 
 # ==================== HTML ====================
 @app.get("/", response_class=HTMLResponse)

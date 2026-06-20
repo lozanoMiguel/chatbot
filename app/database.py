@@ -3,6 +3,12 @@ import asyncpg
 
 from app.config import DATABASE_URL
 
+async def check_connection():
+    """Verifica que la conexión a la base de datos está activa."""
+    # Lógica simple para probar la conexión
+    conn = await asyncpg.connect(DATABASE_URL)
+    await conn.close()
+    return True
 
 async def init_db():
     flag = 0
