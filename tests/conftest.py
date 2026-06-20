@@ -28,6 +28,7 @@ def chat_request(client, mensaje, session_id=None):
 def mock_openai():
     """Mock de OpenAI."""
     from app.functions import get_openai_client
+
     with patch("app.functions.get_openai_client") as mock:
         mock_response = MagicMock()
         mock_response.choices = [

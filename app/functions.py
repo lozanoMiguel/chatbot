@@ -8,6 +8,7 @@ from app.config import OPENAI_API_KEY
 # Cliente OpenAI (reutilizamos el mismo)
 _openai_client = None
 
+
 def get_openai_client():
     """
     Retorna el cliente de OpenAI, inicializándolo solo cuando se llama por primera vez.
