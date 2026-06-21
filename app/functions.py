@@ -124,6 +124,23 @@ def clasificar_intencion_simple(mensaje: str) -> str:
     ):
         return "pregunta_recordatorio"
 
+    # ===== PALABRAS CLARAS DE DESCRIPCION DE CAFE =====
+    if any(
+        phrase in user_norm
+        for phrase in [
+            "describeme",
+            "describime",
+            "descríbeme",
+            "descripcion",
+            "contame",
+            "cuentame",
+            "notas",
+            "caracteristicas",
+            "sabor",
+        ]
+    ):
+        return "ia_descripcion_cafe"
+
     # ===== SI EL MENSAJE ES MUY CORTO (posible respuesta a pregunta) =====
     if len(user_norm.split()) <= 2:
         palabras = user_norm.split()
