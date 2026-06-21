@@ -3,10 +3,11 @@ Tests básicos de salud para el chatbot API.
 Verifican que los endpoints principales responden correctamente.
 """
 
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 from conftest import chat_request
+from fastapi.testclient import TestClient
 
 # Ajusta este import al nombre real de tu módulo principal
 # Ejemplo: from app.main import app
@@ -104,11 +105,11 @@ class TestRAGPipeline:
         # Establecer el estado primero
         chat_request(client, "Quiero un café para espresso")
         chat_request(client, "Exótico")
-        
+
         # Llamar a la IA con una descripción
         response = chat_request(client, "Descríbeme el café Puma")
         assert response.status_code == 200
-        
+
         # Verificar que OpenAI fue llamado
         mock_openai.assert_called_once()
 
@@ -128,7 +129,7 @@ class TestDatabase:
         """Debe guardar la conversación en la base de datos."""
         response = chat_request(client, "Hola, quiero un café")
         assert response.status_code == 200
-    
+
         # Verificar que se llamó al menos una vez
         assert mock_db.call_count > 0
         print(f"✅ save_message llamado {mock_db.call_count} veces")

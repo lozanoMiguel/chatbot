@@ -10,12 +10,10 @@ env/
 
 # Python
 __pycache__/
-*.py[cod]
 *.so
 *.egg-info/
 dist/
 build/
-test_*.py
 
 # IDEs
 .vscode/
