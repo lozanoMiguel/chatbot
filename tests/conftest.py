@@ -8,14 +8,16 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.main import app
 from app.database import init_db
+from app.main import app
+
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_database():
     """Inicializa la base de datos antes de los tests."""
     await init_db()
     yield
+
 
 @pytest.fixture
 def client():
