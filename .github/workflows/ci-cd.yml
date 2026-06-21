@@ -100,6 +100,16 @@ jobs:
           echo "=== Contenido de tests/__init__.py ==="
           cat tests/__init__.py || echo "tests/__init__.py no existe"
 
+      - name: Debug - Ver contenido de test_health.py
+        run: |
+          echo "=== Contenido de tests/test_health.py ==="
+          cat tests/test_health.py
+          echo "=== Fin del contenido ==="
+          echo "=== Buscando funciones test ==="
+          grep -n "def test_" tests/test_health.py || echo "❌ No se encontraron funciones test"
+          echo "=== Buscando clases Test ==="
+          grep -n "class Test" tests/test_health.py || echo "❌ No se encontraron clases Test"
+
       ## ── 7. Ejecutar tests ────────────────────────────────
       - name: 🧪 Pytest — Ejecutar tests
         run: |
