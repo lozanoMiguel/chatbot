@@ -91,6 +91,15 @@ jobs:
       # - name: 🔬 Mypy — Type checking
       #   run: mypy app/ --ignore-missing-imports
 
+      - name: Debug - List files
+        run: |
+          echo "=== Archivos en el repositorio ==="
+          ls -la
+          echo "=== Archivos en tests/ ==="
+          ls -la tests/ || echo "tests/ no existe"
+          echo "=== Contenido de tests/__init__.py ==="
+          cat tests/__init__.py || echo "tests/__init__.py no existe"
+
       ## ── 7. Ejecutar tests ────────────────────────────────
       - name: 🧪 Pytest — Ejecutar tests
         run: |
