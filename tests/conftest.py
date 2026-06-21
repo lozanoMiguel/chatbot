@@ -35,15 +35,24 @@ def chat_request(client, mensaje, session_id=None):
 @pytest.fixture
 def mock_openai():
     """Mock de OpenAI."""
-    from app.functions import get_openai_client
+    import app.functions
+    import app.main
 
-    with patch("app.functions.get_openai_client") as mock:
+    # Parchear directamente la función en el módulo
+    with patch.object(app.functions, "get_openai_client") as mock_get_client:
+        # Crear un cliente mock
+        mock_openai_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))
         ]
-        mock.return_value.chat.completions.create.return_value = mock_response
-        yield mock
+        mock_openai_instance.chat.completions.create.return_value = mock_response
+        mock_get_client.return_value = mock_openai_instance
+
+        # También parchear en main si es necesario (por si se importa desde ahí)
+        with patch.object(app.main, "get_openai_client") as mock_main_get_client:
+            mock_main_get_client.return_value = mock_openai_instance
+            yield mock_get_client
 
 
 @pytest.fixture
