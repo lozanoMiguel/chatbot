@@ -6,7 +6,7 @@ Verifican que los endpoints principales responden correctamente.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from conftest import chat_request
+from .conftest import chat_request
 from fastapi.testclient import TestClient
 
 # Ajusta este import al nombre real de tu módulo principal
