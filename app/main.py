@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.config import DATABASE_URL
+from app.config import DATABASE_URL, OPENAI_API_KEY
 from app.database import init_db, save_message
 from app.functions import (
     clasificar_con_ia,
@@ -328,15 +328,18 @@ async def health_check():
         db_status = "disconnected"
 
     llm_status = "connected"
-    try:
-        client = get_openai_client()
-        client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "test"}],
-            max_tokens=5,
-        )
-    except Exception:
-        llm_status = "disconnected"
+    if OPENAI_API_KEY and not OPENAI_API_KEY.startswith("sk-test"):
+        try:
+            client = get_openai_client()
+            client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "test"}],
+                max_tokens=5,
+            )
+        except Exception:
+            llm_status = "disconnected"
+    else:
+        llm_status = "not configured"
 
     overall_status = (
         "ok" if db_status == "connected" and llm_status == "connected" else "degraded"

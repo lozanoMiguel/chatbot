@@ -55,10 +55,12 @@ def mock_rag():
         mock_vectorstore = MagicMock()
         mock_vectorstore.similarity_search.return_value = [
             MagicMock(
-                page_content="Documento de prueba 1", metadata={"source": "test"}
+                page_content="Documento de prueba 1: notas de chocolate y almendra",
+                metadata={"source": "test"},
             ),
             MagicMock(
-                page_content="Documento de prueba 2", metadata={"source": "test"}
+                page_content="Documento de prueba 2: notas de caramelo y frutos amarillos",
+                metadata={"source": "test"},
             ),
         ]
         mock.return_value = mock_vectorstore
