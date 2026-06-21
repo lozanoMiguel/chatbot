@@ -6,12 +6,13 @@ Verifican que los endpoints principales responden correctamente.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from .conftest import chat_request
 from fastapi.testclient import TestClient
 
 # Ajusta este import al nombre real de tu módulo principal
 # Ejemplo: from app.main import app
 from app.main import app
+
+from .conftest import chat_request
 
 # ===========================================================
 # SECCIÓN 1: Tests del endpoint /health
