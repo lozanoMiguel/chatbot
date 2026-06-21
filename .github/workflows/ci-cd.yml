@@ -103,14 +103,7 @@ jobs:
       ## ── 7. Ejecutar tests ────────────────────────────────
       - name: 🧪 Pytest — Ejecutar tests
         run: |
-          pytest tests/ \
-            --verbose \
-            --tb=short \
-            --cov=app \
-            --cov-report=term-missing \
-            --cov-report=xml \
-            --import-mode=importlib \
-            --cov-fail-under=60    # Falla si la cobertura baja del 60%
+          python -m pytest tests/ -v --import-mode=importlib --cov=app --cov-report=xml --cov-fail-under=60
 
       ## ── 8. Subir reporte de cobertura (opcional) ─────────
       - name: 📊 Upload cobertura a Codecov
