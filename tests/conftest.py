@@ -32,26 +32,24 @@ def chat_request(client, mensaje, session_id=None):
     return client.post("/preguntar", json=payload)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_openai():
-    """Mock de OpenAI."""
+    """Mock de OpenAI que se aplica automáticamente a todos los tests."""
     import app.functions
     import app.main
 
-    # Parchear directamente la función en el módulo
     with patch.object(app.functions, "get_openai_client") as mock_get_client:
-        # Crear un mock que devuelva una instancia mock de OpenAI
-        mock_client = MagicMock()
+        mock_openai_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))
         ]
-        mock_client.chat.completions.create.return_value = mock_response
-        mock_get_client.return_value = mock_client
+        mock_openai_instance.chat.completions.create.return_value = mock_response
+        mock_get_client.return_value = mock_openai_instance
 
-        # También parchear en main para asegurar
+        # También parchear en main
         with patch.object(app.main, "get_openai_client") as mock_main_get_client:
-            mock_main_get_client.return_value = mock_client
+            mock_main_get_client.return_value = mock_openai_instance
             yield mock_get_client
 
 
