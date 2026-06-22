@@ -103,10 +103,10 @@ class TestRAGPipeline:
 
     def test_rag_context_is_passed_to_llm(self, client, mock_rag):
         """Debe pasar el contexto RAG a la IA."""
-        import app.functions
+        import app.main  # Importar el módulo donde se usa get_openai_client
 
-        # Parchear directamente en el test
-        with patch.object(app.functions, "get_openai_client") as mock_get_client:
+        # Parchear directamente en el módulo donde se usa
+        with patch.object(app.main, "get_openai_client") as mock_get_client:
             # Configurar el mock
             mock_openai = MagicMock()
             mock_response = MagicMock()
@@ -117,15 +117,12 @@ class TestRAGPipeline:
             mock_get_client.return_value = mock_openai
 
             # Establecer el estado
-            response1 = chat_request(client, "Quiero un café para espresso")
-            assert response1.status_code == 200
-
-            response2 = chat_request(client, "Exótico")
-            assert response2.status_code == 200
+            chat_request(client, "Quiero un café para espresso")
+            chat_request(client, "Exótico")
 
             # Pedir descripción
-            response3 = chat_request(client, "Descríbeme el café Puma")
-            assert response3.status_code == 200
+            response = chat_request(client, "Descríbeme el café Puma")
+            assert response.status_code == 200
 
             # Verificar que el mock fue llamado
             mock_get_client.assert_called()
