@@ -176,8 +176,8 @@ jobs:
       ## ── 5. Esperar y verificar el deploy ─────────────────
       - name: ⏳ Esperar que Render complete el deploy
         run: |
-          echo "Esperando 60 segundos para que Render complete el deploy..."
-          sleep 60
+          echo "Esperando 120 segundos para que Render complete el deploy..."
+          sleep 120
 
       ## ── 6. Health check post-deploy ──────────────────────
       ## Verifica que la app respondió correctamente tras el deploy
@@ -185,18 +185,16 @@ jobs:
         run: |
           HEALTH_URL="${{ secrets.RENDER_APP_URL }}/health"
           echo "Verificando: $HEALTH_URL"
-
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Health check OK (intento $i)"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            echo "Intento $i..."
+            if curl -s -f -o /dev/null "$HEALTH_URL"; then
+              echo "✅ Health check OK"
               exit 0
             fi
-            echo "⏳ Intento $i: status $STATUS — reintentando en 15s..."
+            echo "⏳ Reintentando en 15s..."
             sleep 15
           done
-
-          echo "❌ Health check falló después de 5 intentos"
+          echo "❌ Health check falló después de 10 intentos"
           exit 1
 
       ## ── 7. Notificación de éxito (opcional) ──────────────
