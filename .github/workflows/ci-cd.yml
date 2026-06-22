@@ -186,35 +186,30 @@ jobs:
       ## Verifica que la app respondió correctamente tras el deploy
       - name: 🏥 Health check post-deploy
         run: |
-          HEALTH_URL="${{ secrets.RENDER_APP_URL }}/health"
+          # Asegurar que la URL usa https://
+          BASE_URL="${{ secrets.RENDER_APP_URL }}"
+          # Si no tiene https://, añadirlo
+          if [[ ! "$BASE_URL" =~ ^https?:// ]]; then
+            BASE_URL="https://$BASE_URL"
+          fi
+          HEALTH_URL="$BASE_URL/health"
           echo "Verificando: $HEALTH_URL"
 
-          # Verificar que la URL existe
-          if [ -z "$HEALTH_URL" ]; then
-            echo "❌ RENDER_APP_URL no está configurado como secreto"
-            exit 1
-          fi
-
+          # Usar curl con -L para seguir redirecciones
           for i in 1 2 3 4 5 6 7 8 9 10; do
             echo "--- Intento $i ---"
-            
-            # Mostrar el código de estado y el body
-            RESPONSE=$(curl -s -w "\n%{http_code}" "$HEALTH_URL")
+            RESPONSE=$(curl -s -L -w "\n%{http_code}" "$HEALTH_URL")
             HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | head -n-1)
-            
             echo "HTTP Status: $HTTP_STATUS"
             echo "Body: $BODY"
-            
             if [ "$HTTP_STATUS" = "200" ]; then
               echo "✅ Health check OK"
               exit 0
             fi
-            
             echo "⏳ Reintentando en 15s..."
             sleep 15
           done
-
           echo "❌ Health check falló después de 10 intentos"
           exit 1
 
