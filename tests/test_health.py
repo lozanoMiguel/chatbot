@@ -89,7 +89,7 @@ class TestRAGPipeline:
     funciona: recupera chunks relevantes y los incluye en el prompt.
     """
 
-    def test_rag_retriever_returns_documents(self, client, mock_rag):
+    def test_rag_retriever_returns_documents(self, client, mock_rag, mock_openai):
         """Debe recuperar documentos de ChromaDB."""
         response = chat_request(client, "Descríbeme el café Puma")
         assert response.status_code == 200

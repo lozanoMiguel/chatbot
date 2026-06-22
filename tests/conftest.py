@@ -40,18 +40,18 @@ def mock_openai():
 
     # Parchear directamente la función en el módulo
     with patch.object(app.functions, "get_openai_client") as mock_get_client:
-        # Crear un cliente mock
-        mock_openai_instance = MagicMock()
+        # Crear un mock que devuelva una instancia mock de OpenAI
+        mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content="Respuesta de prueba del chatbot."))
         ]
-        mock_openai_instance.chat.completions.create.return_value = mock_response
-        mock_get_client.return_value = mock_openai_instance
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_get_client.return_value = mock_client
 
-        # También parchear en main si es necesario (por si se importa desde ahí)
+        # También parchear en main para asegurar
         with patch.object(app.main, "get_openai_client") as mock_main_get_client:
-            mock_main_get_client.return_value = mock_openai_instance
+            mock_main_get_client.return_value = mock_client
             yield mock_get_client
 
 
