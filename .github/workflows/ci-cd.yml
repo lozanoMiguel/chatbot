@@ -178,7 +178,10 @@ jobs:
         run: |
           echo "Esperando 120 segundos para que Render complete el deploy..."
           sleep 120
-
+      - name: 🔍 Debug - Verificar URL
+        run: |
+          echo "URL base: ${{ secrets.RENDER_APP_URL }}"
+          echo "URL completa: ${{ secrets.RENDER_APP_URL }}/health"
       ## ── 6. Health check post-deploy ──────────────────────
       ## Verifica que la app respondió correctamente tras el deploy
       - name: 🏥 Health check post-deploy
