@@ -1,13 +1,13 @@
-from collections import defaultdict
-from contextlib import asynccontextmanager
+from collections import defaultdict # Crea un diccionario que devuelve un valor por defecto
+from contextlib import asynccontextmanager # Permite definir el ciclo de vida de la aplicación FastAPI
 
 import aiosqlite
-import asyncpg
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+import asyncpg #Cliente asíncrono para PostgreSQL, usado en producción con Supabase para persistir el historial de conversaciones
+from fastapi import FastAPI, HTTPException #FastAPI crea la aplicación web; HTTPException permite devolver errores HTTP (ej. 404, 500) de forma controlada
+from fastapi.middleware.cors import CORSMiddleware #Permite que el frontend (HTML/JS) en cualquier dominio/puerto pueda llamar a la API (evita errores CORS)
+from fastapi.responses import HTMLResponse #Indica que el endpoint / devuelve contenido HTML en lugar de JSON
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel #Define modelos de datos que FastAPI usa para validar automáticamente el cuerpo de las peticiones y respuestas.
 
 from app.config import DATABASE_URL, OPENAI_API_KEY
 from app.database import init_db, save_message
@@ -28,7 +28,6 @@ estado_usuario = defaultdict(
     lambda: {"metodo": None, "perfil": None, "ultimos_cafes": []}
 )
 
-
 # ==================== LIFESPAN ====================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,7 +41,7 @@ app = FastAPI(title="CafBot - Asistente de Café", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
-
+# le decimos a fastapi que toda todo archivo que se sirva de esta carpeta sera estatico
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 

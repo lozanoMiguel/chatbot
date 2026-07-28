@@ -7,11 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-
-# Ajusta este import al nombre real de tu módulo principal
-# Ejemplo: from app.main import app
 from app.main import app
-
 from .conftest import chat_request
 
 # ===========================================================
@@ -50,7 +46,7 @@ class TestHealthEndpoint:
 
 class TestChatEndpoint:
     """
-    Verifica la lógica del endpoint de chat sin llamar
+    Verifica la lógica del endpoint preguntar sin llamar
     realmente a OpenAI ni a Supabase (mocks).
     """
 
