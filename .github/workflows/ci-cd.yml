@@ -78,10 +78,9 @@ jobs:
 
       ## ── 4. Linting y Formato con Ruff — Calidad de código ──────────────────
       - name: 🔍 Ruff — Lint
-        run: ruff check .
-
-      - name: 🎨 Ruff — Verificar formato
-        run: ruff format --check .
+        run: |
+          ruff check --fix .
+          ruff check .
       ## ── 5. Formato — Black ───────────────────────────────
       #- name: 🎨 Black — Verificar formato
       # run: black --check .
