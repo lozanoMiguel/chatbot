@@ -36,7 +36,7 @@ def chat_request(client, mensaje, session_id=None):
 def mock_openai():
     """Mock de OpenAI que se aplica automáticamente a todos los tests."""
     import app.functions
-    import app.main
+    import app.routes.chat
 
     with patch.object(app.functions,"get_openai_client") as mock_get_client:
         mock_openai_instance = MagicMock()
