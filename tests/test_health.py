@@ -101,10 +101,10 @@ class TestRAGPipeline:
 
     def test_rag_context_is_passed_to_llm(self, client, mock_rag):
         """Debe pasar el contexto RAG a la IA."""
-        import app.main  # Importar el módulo donde se usa get_openai_client
+        import app.routes.chat  # Importar el módulo donde se usa get_openai_client
 
         # Parchear directamente en el módulo donde se usa
-        with patch.object(app.main, "get_openai_client") as mock_get_client:
+        with patch.object(app.routes.chat, "get_openai_client") as mock_get_client:
             # Configurar el mock
             mock_openai = MagicMock()
             mock_response = MagicMock()

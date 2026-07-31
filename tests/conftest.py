@@ -38,7 +38,7 @@ def mock_openai():
     import app.functions
     import app.main
 
-    with patch.object(app.functions, "get_openai_client") as mock_get_client:
+    with patch.object(app.functions,"get_openai_client") as mock_get_client:
         mock_openai_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
@@ -48,7 +48,7 @@ def mock_openai():
         mock_get_client.return_value = mock_openai_instance
 
         # También parchear en main
-        with patch.object(app.main, "get_openai_client") as mock_main_get_client:
+        with patch.object(app.functions,"get_openai_client") as mock_main_get_client:
             mock_main_get_client.return_value = mock_openai_instance
             yield mock_get_client
 
@@ -77,9 +77,9 @@ def mock_rag():
 @pytest.fixture
 def mock_db():
     """Mock de save_message en app.main (el lugar donde se usa)."""
-    import app.main
+    import app.routes.chat
 
-    with patch.object(app.main, "save_message") as mock:
+    with patch.object(app.routes.chat, "save_message") as mock:
         mock.return_value = None
         yield mock
 
