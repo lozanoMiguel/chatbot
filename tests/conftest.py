@@ -27,18 +27,17 @@ def client():
 def chat_request(client, mensaje, session_id=None):
     if session_id is None:
         session_id = f"test_{uuid.uuid4().hex[:8]}"
-
     payload = {"mensaje": mensaje, "session_id": session_id}
     return client.post("/preguntar", json=payload)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_openai():
-    """Mock de OpenAI que se aplica automáticamente a todos los tests."""
+    """Mock de OpenAI."""
     import app.functions
     
-
-    with patch("app.functions.get_openai_client") as mock_get_client:
+    # ✅ Un solo parcheo correcto
+    with patch.object(app.functions, "get_openai_client") as mock_get_client:
         mock_openai_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
@@ -46,39 +45,24 @@ def mock_openai():
         ]
         mock_openai_instance.chat.completions.create.return_value = mock_response
         mock_get_client.return_value = mock_openai_instance
-
-        # También parchear en main
-        with patch.object(app.functions,"get_openai_client") as mock_main_get_client:
-            mock_main_get_client.return_value = mock_openai_instance
-            yield mock_get_client
+        yield mock_get_client
 
 
 @pytest.fixture
 def mock_rag():
     """Mock de la búsqueda en ChromaDB."""
-    from app.rag import get_vectorstore
-
-    with patch("app.rag.get_vectorstore") as mock:
-        mock_vectorstore = MagicMock()
-        mock_vectorstore.similarity_search.return_value = [
-            MagicMock(
-                page_content="Documento de prueba 1: notas de chocolate y almendra",
-                metadata={"source": "test"},
-            ),
-            MagicMock(
-                page_content="Documento de prueba 2: notas de caramelo y frutos amarillos",
-                metadata={"source": "test"},
-            ),
-        ]
-        mock.return_value = mock_vectorstore
+    with patch("app.rag.buscar_contexto") as mock:
+        mock.return_value = """
+        Documento de prueba 1: notas de chocolate y almendra
+        Documento de prueba 2: notas de caramelo y frutos amarillos
+        """
         yield mock
 
 
 @pytest.fixture
 def mock_db():
-    """Mock de save_message en app.main (el lugar donde se usa)."""
+    """Mock de save_message."""
     import app.routes.chat
-
     with patch.object(app.routes.chat, "save_message") as mock:
         mock.return_value = None
         yield mock
