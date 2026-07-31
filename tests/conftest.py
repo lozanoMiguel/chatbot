@@ -51,6 +51,8 @@ def mock_openai():
 @pytest.fixture
 def mock_rag():
     """Mock de la búsqueda en ChromaDB."""
+    import app.routes.chat
+     
     with patch("app.rag.buscar_contexto") as mock:
         mock.return_value = """
         Documento de prueba 1: notas de chocolate y almendra
