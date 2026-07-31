@@ -1,20 +1,23 @@
-from fastapi import APIRouter, HTTPException
-from app.models import Request, Response, ChatRequest, ChatResponse
-from app.database import save_message
-from app.state import estado_usuario
-from app.functions import get_openai_client, recomendar_cafe
-from app.rag import buscar_contexto
-from app.functions import (
-    clasificar_intencion_simple,
-    clasificar_con_ia,
-    normalizar_texto,
-    recomendar_cafe,
-    get_metodo,
-    get_perfil
-)
 import uuid
 
+from fastapi import APIRouter, HTTPException
+
+from app.database import save_message
+from app.functions import (
+    clasificar_con_ia,
+    clasificar_intencion_simple,
+    get_metodo,
+    get_openai_client,
+    get_perfil,
+    normalizar_texto,
+    recomendar_cafe,
+)
+from app.models import ChatRequest, ChatResponse, Request, Response
+from app.rag import buscar_contexto
+from app.state import estado_usuario
+
 router = APIRouter()
+
 
 @router.post("/preguntar", response_model=Response)
 async def preguntar(pregunta: Request):
@@ -228,19 +231,19 @@ async def preguntar(pregunta: Request):
             print("   💻 Usando lógica dura")
 
             if not estado["perfil"]:
-                respuesta_texto = f"""Tenemos 3 perfiles de café:
-                                
+                respuesta_texto = """Tenemos 3 perfiles de café:
+
                                 - TRADICIONAL (niveles 1/3 a 3/3): Sabores clásicos, achocolatados, nueces, caramelo. Acidez suave a media. Cuerpo meloso o jugoso. Ideal para quienes empiezan o buscan un espresso reconfortante.
-                                
+
                                 - EXÓTICO (niveles 1/3 a 3/3): Sabores frutales (fresa, mango, mora), florales, cítricos. Acidez más marcada (málica, cítrica, tartárica). Cuerpo cremoso. Para paladares aventureros.
-                                
+
                                 - FUNKY (nivel 3/3): Sabores licorosos, fermentados, frutas maduras, vino, mermelada. Acidez media a alta. Cuerpo cremoso. Para expertos.
-                                
+
                                 Que perfil te gustaria probar?
                                 """
             elif estado["perfil"] and not estado["metodo"]:
                 respuesta_texto = (
-                                    "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
+                    "¿Cómo tomas tu café, en máquina de espresso o en filtro?"
                 )
             else:
                 respuesta_texto = recomendar_cafe(

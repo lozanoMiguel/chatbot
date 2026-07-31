@@ -1,6 +1,8 @@
 import re
 import unicodedata
+
 from openai import OpenAI
+
 from app.config import OPENAI_API_KEY
 from app.models import ClasificacionSchema
 
@@ -111,7 +113,12 @@ def clasificar_intencion_simple(mensaje: str) -> str:
     # ===== PALABRAS CLARAS DE COMPRA =====
     if any(
         phrase in user_norm
-        for phrase in ["quiero comprar", "quiero un cafe", "quiero un perfil", "recomiendame un cafe"]
+        for phrase in [
+            "quiero comprar",
+            "quiero un cafe",
+            "quiero un perfil",
+            "recomiendame un cafe",
+        ]
     ):
         return "logica_compra"
 
@@ -167,19 +174,19 @@ async def clasificar_con_ia(mensaje: str) -> str:
     Usa OpenAI con Salidas Estructuradas para clasificar mensajes sin errores de formato.
     """
     client = get_openai_client()
-    
+
     response = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=[
             {
                 "role": "system",
                 "content": """
-                    Eres un clasificador de intenciones experto en café de especialidad. 
+                    Eres un clasificador de intenciones experto en café de especialidad.
                     Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
 
                     - compra: Si el hilo de la conversacion es acerca de la compra o recomendacion de cafe y aun no se ha mencionado el metodo(maquina de espresso o filtro) o el perfil(tradicional,exotico o fanky)
                     - descripcion_cafe: El usuario pide describir un café en especifico o cafés recomendados(ej. "describeme el Alacrán", "qué origen tiene el cóndor", "puedes describirme esos cafes?", "hablame de esos cafes").
-                    - descripcion_faq: El usuario quiere que le respondas preguntas tipicas en una cafeteria de especialidad. Ejemplo: "¿Qué café me recomiendas si soy principiante?", "¿Recomiéndame un café para filtro?", "¿Cuál es el café más ácido y afrutado?", "Explicame los diferentes perfiles cafe que tienen", "Explicame el cafe exotico","Como se prepara un cafe filtrado?", "Como es el tostado de cafe para espresso?" 
+                    - descripcion_faq: El usuario quiere que le respondas preguntas tipicas en una cafeteria de especialidad. Ejemplo: "¿Qué café me recomiendas si soy principiante?", "¿Recomiéndame un café para filtro?", "¿Cuál es el café más ácido y afrutado?", "Explicame los diferentes perfiles cafe que tienen", "Explicame el cafe exotico","Como se prepara un cafe filtrado?", "Como es el tostado de cafe para espresso?"
                     - recordatorio: Preguntas sobre recomendaciones previas (ej. "¿qué opciones tenía?", "¿qué cafés me habías recomendado?").
                     - saludo: Saludos, agradecimientos o despedidas (ej. "hola", "gracias", "adiós").
                     """,
@@ -187,7 +194,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
             {"role": "user", "content": mensaje},
         ],
         temperature=0,
-        response_format=ClasificacionSchema, # Forzamos el formato Pydantic
+        response_format=ClasificacionSchema,  # Forzamos el formato Pydantic
     )
 
     # La IA garantiza devolver uno de los strings definidos en el Literal

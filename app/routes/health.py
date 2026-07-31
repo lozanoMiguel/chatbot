@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException
-from app.database import DATABASE_URL
-from app.config import OPENAI_API_KEY
-from app.functions import get_openai_client
-import asyncpg
 import aiosqlite
+import asyncpg
+from fastapi import APIRouter
+
+from app.config import OPENAI_API_KEY
+from app.database import DATABASE_URL
+from app.functions import get_openai_client
 
 router = APIRouter()
+
 
 @router.get("/health")
 async def health_check():

@@ -1,7 +1,9 @@
 from fastapi import APIRouter
+
 from app.state import estado_usuario
 
 router = APIRouter()
+
 
 @router.get("/debug/estado/{session_id}")
 async def debug_estado(session_id: str):
