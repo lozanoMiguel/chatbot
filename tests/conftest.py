@@ -34,10 +34,10 @@ def chat_request(client, mensaje, session_id=None):
 @pytest.fixture
 def mock_openai():
     """Mock de OpenAI."""
-    import app.functions
+    import app.routes.chat
     
     # ✅ Un solo parcheo correcto
-    with patch.object(app.functions, "get_openai_client") as mock_get_client:
+    with patch.object(app.routes.chat, "get_openai_client") as mock_get_client:
         mock_openai_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [
