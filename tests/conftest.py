@@ -53,7 +53,7 @@ def mock_rag():
     """Mock de la búsqueda en ChromaDB."""
     import app.routes.chat
      
-    with patch(app.routes.chat, "buscar_contexto") as mock:
+    with patch.object(app.routes.chat, "buscar_contexto") as mock:
         mock.return_value = """
         Documento de prueba 1: notas de chocolate y almendra
         Documento de prueba 2: notas de caramelo y frutos amarillos
