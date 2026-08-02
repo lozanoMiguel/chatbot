@@ -1,4 +1,3 @@
-# Usar una imagen base de Python 3.11 slim (más ligera)
 FROM python:3.11-slim
 
 # Establecer variables de entorno
@@ -24,9 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el resto del código del proyecto
 COPY . .
 
-# Exponer el puerto que usará Render
+# Exponer el puerto (Render usará $PORT)
 EXPOSE 8000
 
 # Comando para ejecutar la aplicación
-# Usamos uvicorn directamente (gunicorn opcional para producción)
-CMD sh -c "python indexar_documentos.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+# Usamos el puerto de Render ($PORT) y ejecutamos indexación antes
+CMD sh -c "python indexar_documentos.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
