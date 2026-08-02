@@ -14,7 +14,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
-
+print("🚀 Iniciando indexación de documentos...")
 # 1. Cargar todos los archivos .txt desde la carpeta 'documentos_cafeteria'
 documents = []
 for filepath in glob.glob("documentos_cafeteria/**/*.txt", recursive=True):
