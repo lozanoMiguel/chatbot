@@ -1,27 +1,35 @@
-PREGUNTA: ¿Qué café me recomiendas si soy principiante?
-RESPUESTA: Prueba un Tradicional nivel 1/3 como Cóndor (Colombia, notas chocolate con leche y caramelo) o Lince (Brasil, chocolate y nueces). Ambos son muy equilibrados.
+PREGUNTA:¿Qué significa que un café tenga cuerpo cremoso?
+RESPUESTA:El cuerpo es la sensación que deja el café en la boca. Un cuerpo cremoso se siente denso, suave y parecido a la textura de una crema.
 
-PREGUNTA: ¿Cuál es el café más ácido y afrutado?
-RESPUESTA: Los Exóticos, especialmente Delfín Rosado (notas a fresa, miel de limón) o Nebiri (albaricoque, mango). También Correcaminos (moras, melocotón).
+PREGUNTA:¿Qué significa que un café tenga mucho cuerpo?
+RESPUESTA:Que se siente más denso y pesado en boca, con una sensación más intensa y persistente.
 
-PREGUNTA: ¿Cuál es el café más intenso y licoroso?
-RESPUESTA: Coyote, nuestro único Funky. Notas a brownie, mermelada de melocotón y moscatel. Para paladares atrevidos.
+PREGUNTA:¿Qué significa que un café tenga poco cuerpo?
+RESPUESTA:Que se siente más ligero y delicado, con una textura similar a la de un té.
 
-PREGUNTA: ¿Qué café es mejor para un latte?
-RESPUESTA: Los Tradicionales achocolatados como Alacrán, Cóndor o Lince. Su perfil combina perfectamente con la leche.
+PREGUNTA:¿Qué es la variedad de un café?
+RESPUESTA:Es la variedad de la planta de café de la que proviene el grano. Influye en sus sabores, aromas y características. Algunos ejemplos son Pink Bourbon, Caturra, Catuaí rojo o Catuaí amarillo.
 
-PREGUNTA: ¿Recomiéndame un café para filtro?
-RESPUESTA: Correcaminos (El Salvador, notas a moras y chocolate) o Nebiri (Etiopía, notas a albaricoque y mango). Ambos tostados filtro.
+PREGUNTA:¿La variedad cambia el sabor del café?
+RESPUESTA:Sí. Cada variedad tiene características propias y puede aportar diferentes aromas, sabores, dulzor y acidez.
 
-PREGUNTA: ¿Qué diferencia hay entre un café Exótico y un Funky?
-RESPUESTA: El Exótico tiene sabores frutales frescos (fresa, mango, mora). El Funky tiene sabores fermentados, como vino, frutas maduras o mermelada. El Funky es más intenso y complejo.
+PREGUNTA:¿Qué significa que un café esté tostado para espresso?
+RESPUESTA:Es un tostado pensado para extraer el café con presión. Normalmente busca mayor cuerpo, dulzor y equilibrio en una extracción corta.
 
-PREGUNTA: ¿Tienen café tradicional para filtro?
-RESPUESTA: Actualmente no tenemos cafés tradicionales para filtro. Nuestros cafés para filtro son Correcaminos y Nebiri, ambos con perfil exótico.
+PREGUNTA:¿Qué significa que un café esté tostado para filtro?
+RESPUESTA:Es un tostado pensado para métodos de filtrado. Suele buscar resaltar la acidez, los aromas y los sabores más delicados del café.
 
-PREGUNTA: ¿Tienen café funky para filtro?
-RESPUESTA: No, nuestro único café funky (Coyote) está tostado para espresso.
+PREGUNTA:¿Un café de filtro se puede preparar en espresso?
+RESPUESTA:Sí, pero el resultado puede ser diferente al esperado, ya que el tostado está diseñado pensando en otro método de extracción.
 
-PREGUNTA: ¿Cuántos cafés exóticos tienen para espresso?
-RESPUESTA: Tenemos 3, el Puma, el Delfin Rosado y el Dimeti
+PREGUNTA:¿Qué son los puntos SCA?
+RESPUESTA:Es una puntuación utilizada para valorar la calidad sensorial de un café, teniendo en cuenta aspectos como aroma, sabor, acidez, cuerpo y balance.
 
+PREGUNTA:¿Qué significa que un café tenga 85 puntos SCA?
+RESPUESTA:Significa que, según un protocolo de evaluación, ha obtenido una puntuación alta y presenta características de calidad propias de un café de especialidad.
+
+PREGUNTA:¿Qué modifica la altitud en el café?
+RESPUESTA:La altitud influye en la forma en que madura el grano. Los cafés cultivados a mayor altura suelen desarrollar una mayor complejidad, acidez y aromas más definidos.
+
+PREGUNTA:¿Un café de mayor altitud es mejor?
+RESPUESTA:No necesariamente. La altitud es solo uno de los factores que influyen en el café; la variedad, el clima, el proceso y el tostado también son muy importantes.

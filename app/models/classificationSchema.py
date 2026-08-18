@@ -5,5 +5,5 @@ from pydantic import BaseModel
 
 class ClasificacionSchema(BaseModel):
     intencion: Literal[
-        "compra", "descripcion_cafe", "descripcion_faq", "recordatorio", "saludo"
+        "compra", "descripcion_cafe", "saludo", "fallback"
     ]

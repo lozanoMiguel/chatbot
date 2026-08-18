@@ -15,4 +15,5 @@ services:
       - ./app:/app/app # 👈 MONTA TU CÓDIGO LOCAL
       - ./chroma_db:/app/chroma_db
       - ./indexar_documentos.py:/app/indexar_documentos.py # opcional
+      - ./documentos_cafeteria:/app/documentos_cafeteria
     restart: unless-stopped

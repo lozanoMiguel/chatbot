@@ -1,8 +1,252 @@
 import aiosqlite
 import asyncpg
-
+from typing import List
 from app.config import DATABASE_URL
 
+#lista_cafes: List[str] = [
+#                           "Anaerobic natural", 
+#                         "Black honey", 
+#                         "Cerro azul", 
+#                         "Decaf Honey", 
+#                          "El Obraje", 
+#                          "Finca Las Mercedes", 
+ #                           "Gesha village", 
+ #                           "Granito de oro", 
+ #                           "Honey java", 
+ #                           "La loma",
+ #                           "Maracaturra",
+ #                           "Montecarlo",
+ #                           "Natural gesha",
+ #                           "Natural limau",
+ #                           "Organic SHB",
+ #                           "Peaberry de Kenia",
+ #                           "Sidra del ecuador",
+ #                           "Tropical natural",
+ #                           "Washed geisha"
+ #                       ]
+
+lista_cafes: List[str] = [
+    "Alacrán", "Cóndor", "Lince", "Yurumi", "Dimeti", "Delfin Rosado", "Puma", "Coyote","Correcaminos", "Nebiri"
+]
+
+intencion_metodo: List[str] = [
+                            "utilizo",
+                            "uso",
+                            "tengo una",
+                            "preparo",
+                            "cafetera",
+                            "maquina",
+                            "de brazo",
+                            "de maneral",
+                            "portafiltro",
+                            "maquinita",
+                            "para mi"
+                        ]
+
+lista_metodos: List[str] = [
+                            "automatica",
+                            "semiautomatica",
+                            "superautomatica",
+                            "espresso",
+                            "espreso",
+                            "expresso" ,
+                            "expreso", 
+                            "filtro",
+                            "filtrado",
+                            "filter",
+                            "v60",
+                            "chemex",
+                            "moka",
+                            "aeropress",
+                            "italiana",
+                            "marzocco", 
+                            "rocket",
+                            "krups",
+                            "jura",
+                            "saeco",
+                            "breville",
+                            "gaggia",
+                            "nespresso",
+                            "lavaz",
+                            "philips",
+                            "ecm",
+                            "delonghi",
+                            "lelit",
+                            "rancilio",
+                            "sage",
+                            "oscar",
+                            "simonelli",
+                            "flair",
+                            "miele",
+                            "cafelat",
+                            "pavoni", 
+                            "hario", 
+                            "kalita", 
+                            "melitta",
+                            "goteo", 
+                            "chemex", 
+                            "moccamaster", 
+                            "origami", 
+                            "fellow"
+                        ]
+
+palabras_espresso: List[str] = [
+                                "espresso",
+                                "espreso",
+                                "expresso",
+                                "expres",
+                                "automatica",
+                                "semiautomatica",
+                                "superautomatica",
+                                "marzocco",
+                                "rocket",
+                                "krups",
+                                "jura",
+                                "saeco",
+                                "breville",
+                                "gaggia",
+                                "nespresso",
+                                "lavazza",
+                                "philips",
+                                "ecm",
+                                "delonghi",
+                                "lelit",
+                                "rancilio",
+                                "sage",
+                                "oscar",
+                                "simonelli",
+                                "flair",
+                                "miele",
+                                "cafelat",
+                                "pavoni", 
+                            ]
+
+palabras_filtro: List[str] = [
+                                "filtro",
+                                "filtrado",
+                                "filter",
+                                "v60",
+                                "chemex",
+                                "moka",
+                                "goteo",
+                                "aeropres",
+                                "la italiana",
+                                "hario", 
+                                "kalita", 
+                                "melitta", 
+                                "chemex", 
+                                "camaster", 
+                                "origami", 
+                                "fellow"                        
+]
+
+intencion_perfil: List[str] = [
+                               "tradicional",
+                               "exotico",
+                               "funky",
+                               "notas",
+                               "sabor",
+                               "cuerpo",
+                               "huelen",
+                               "olor",
+                               "que sepa",
+                               "perfil",
+                               "intenso",
+                               "con mucha",
+                               "con mucho",
+                               "con poca",
+                               "acidez"
+                            ]
+
+lista_perfiles: List[str] = [
+                             "tradicional",
+                             "clasico",
+                             "dulce",
+                             "chocola",
+                             "poca acidez",
+                             "frutal", 
+                             "citrico",
+                             "floral",
+                             "mucha acidez",
+                             "fermentado",
+                             "licoroso",
+                             "exotico",
+                             "fanky",
+                             "funky",
+                             "fonky",
+                          ]
+
+intencion_faq: List[str] = [
+                            "sca",
+                            "puntos sca",
+                            "puntuacion sca",
+                            "variedad",
+                            "variedades",
+                            "proceso",
+                            "procesos",
+                            "lavado",
+                            "natural",
+                            "naturales",
+                            "honey",
+                            "fermentado",
+                            "fermentacion",
+                            "tostado",
+                            "tueste",
+                            "cuerpo",
+                            "acidez",
+                            "dulzor",
+                            "amargor",
+                            "altitud",
+                            "altura",
+                            "terroir",
+                            "catacion",
+                            "cata",
+                            "extraccion",
+                            "molienda",
+                            "moler",
+                            "ratio",
+                            "temperatura",
+                            "bloom",
+                            "preinfusion"
+]
+
+intencion_descripcion: List[str] = [
+                            "describeme",
+                            "descripcion",
+                            "caracteristicas del cafe",
+                            "notas del cafe",
+                            "perfil del cafe",
+                            "a que sabe",
+                            "como sabe",
+                            "que sabores tiene",
+                            "que notas tiene"
+]
+
+intencion_compra: List[str] = [
+                                "recomiendame",
+                                "que cafe me recomiendas",
+                                "quiero un cafe",
+                                "busco un cafe",
+                                "me gustaria un cafe",
+                                "quiero comprar",
+                                "que cafe compro",
+                                "cual me recomiendas",
+                                "cual elegir"
+]
+
+intencion_saludo: List[str] = [
+                                "hola",
+                                "buenos dias",
+                                "buenas tardes",
+                                "buenas noches",
+                                "adios",
+                                "chao",
+                                "hasta luego",
+                                "bye",
+                                "gracias",
+                                "muchas gracias",
+                                "listo"
+]
 
 async def check_connection():
     """Verifica que la conexión a la base de datos está activa."""
