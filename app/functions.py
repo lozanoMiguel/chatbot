@@ -438,7 +438,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
                             - "Messi"
                             - "Que hora es?
                             - "Hara buen clima mañana?
-                            
+
                         Devuelve únicamente JSON con este formato:
 
                         {
@@ -462,7 +462,7 @@ async def clasificar_con_ia(mensaje: str) -> str:
             response_format={"type": "json_object"}
         )
 
-        
+
         clasificacion = response.choices[0].message.content.strip()
         json_match = re.search(r'\{.*\}', clasificacion, re.DOTALL)
         if json_match:
@@ -477,12 +477,12 @@ async def clasificar_con_ia(mensaje: str) -> str:
         if confidence < 75 and confidence > 50:
             intent = "intencion_compra"
         return intent
-    
+
     except json.JSONDecodeError as e:
         print(f"❌ Error decodificando JSON: {e}")
         print(f"   Respuesta recibida: {clasificacion[:200] if 'clasificacion' in locals() else 'No hay respuesta'}")
         return "intencion_compra"
-    
+
     except Exception as e:
         print(f"❌ Error en clasificar_con_ia: {e}")
         return "intencion_compra"
