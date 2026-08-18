@@ -6,17 +6,16 @@ from app.database import save_message
 from app.functions import (
     clasificar_con_ia,
     clasificar_intencion_simple,
+    describir_cafe,
     get_openai_client,
+    identificar_metodo,
+    identificar_perfil,
     normalizar_texto,
     recomendar_cafe,
-    identificar_perfil,
-    identificar_metodo,
-    describir_cafe
 )
 from app.models import ChatRequest, ChatResponse, Request, Response
 from app.rag import buscar_contexto
 from app.state import estado_usuario
-from app.database import lista_cafes
 
 router = APIRouter()
 
@@ -32,7 +31,7 @@ async def preguntar(pregunta: Request):
         await save_message(session_id, "user", user_message)
 
         user_lower = normalizar_texto(user_message)
-        
+
         identificar_metodo(user_lower, session_id)
         identificar_perfil(user_lower, session_id)
 
@@ -41,11 +40,11 @@ async def preguntar(pregunta: Request):
         print(
             f"   📊 Estadooo: método={estado['metodo']}, perfil={estado['perfil']}, ultimos_cafes={estado['ultimos_cafes']}"
         )
-                
+
         # ========== IDENTIFICAION DE INTENCION EN EL MENSAJE ==========
         intencion = clasificar_intencion_simple(user_lower)
         print(f"   🧠 Intención: {intencion}")
-        
+
         if intencion is None:
             # Si las reglas simples no pudieron clasificar, usamos IA
             print("   🤔 Mensaje ambiguo, usando IA para clasificar...")
@@ -53,7 +52,7 @@ async def preguntar(pregunta: Request):
             print(f"   🧠 IA clasificó como: {intencion}")
         else:
             print(f"   📏 Reglas simples clasificaron como: {intencion}")
-        
+
         # ========== RUTA 1: IA para descripciones de cafe ==========
         if intencion == "intencion_descripcion":
             print("   🤖 Usando IA + RAG")
@@ -112,7 +111,7 @@ async def preguntar(pregunta: Request):
             system_prompt = f"""
                                 Eres un experto en el mundo del cafe de especialidad, tienes bastos conocimientos sobre tostado de cafe, sabes recomendar acertadamente y eres un excelso barista.
                                 Utiliza el siguiente contexto para responder o acude a tu base de conocimiento.
-                                
+
                                 CONTEXTO RAG:
                                 {contexto}
 
@@ -144,7 +143,7 @@ async def preguntar(pregunta: Request):
                 )
 
         # ========== RUTA 4: Lógica dura (compra) ==========
-        elif intencion == "intencion_compra":  
+        elif intencion == "intencion_compra":
             print("   💻 Usando lógica dura")
             if not estado["metodo"]:
                 respuesta_texto = ("¡Perfecto! ☕ Primero, ¿cómo lo vas a preparar? Espresso o filtro?")
@@ -163,7 +162,7 @@ async def preguntar(pregunta: Request):
                 if not cafes_recomendados:
                     respuesta_texto = f"No tenemos cafés {estado['perfil']} para {estado['metodo']}. ¿Te gustaría probar otro perfil?"
                 #elif len(cafes_recomendados) == 1:
-                    
+
                     #respuesta_texto = f"Para {estado['metodo']} y perfil {estado['perfil']}, te recomiendo {cafes_recomendados[0]}. ¡Es una excelente elección!"
                # else:
                 #    respuesta_texto =  f"Para {estado['metodo']} y perfil {estado['perfil']}, te recomiendo: {', '.join(cafes_recomendados[:-1])} y {cafes_recomendados[-1]}."
@@ -175,12 +174,12 @@ async def preguntar(pregunta: Request):
                     contexto = "\n\n".join(contexto_parts)
                     system_prompt = f"""
                                         Eres dueño y tostador de una cafeteria que vende su cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes_recomendados)}.
-                    
+
                                         No menciones ningún otro café que no esté en esta lista.
-                    
+
                                         INFORMACIÓN DE CADA CAFÉ (Origen, notas, cuerpo, acidez y recomendacion):
                                         {contexto}
-                    
+
                                         REGLAS DE FORMATO OBLIGATORIAS:
                                         1. Empieza la respuesta diciendo: Para {estado['metodo']} y perfil {estado['perfil']} te recomiendo:
                                         2. Escribe CADA café en una línea NUEVA.
@@ -188,11 +187,11 @@ async def preguntar(pregunta: Request):
                                         4. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
                                         5. Puedes agregar 2 o 3 emojis, no mas.
                                         6. Ejemplo de formato CORRECTO:
-                    
+
                                         - Alacrán: Cafe de El Salvador, de la region de Apaneca-Ilamatepec. Tiene notas a chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
-                            
+
                                         Responde de forma natural y entusiasta, pero respetando el formato.
-                    
+
                                         """
                     client = get_openai_client()
                     response = client.chat.completions.create(
@@ -208,7 +207,7 @@ async def preguntar(pregunta: Request):
         # ========== RUTA 5: Fallback ==========
         else: #fallback
             respuesta_texto = "Puedo ayudarte a encontrar el café que mejor se adapte a tus gustos, solo cuentame como lo preparas en casa :)"
-            
+
         # Guardar respuesta
         await save_message(session_id, "assistant", respuesta_texto)
         print(f"   💬 Respuesta: {respuesta_texto[:100]}...")

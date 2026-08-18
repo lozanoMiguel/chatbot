@@ -1,18 +1,20 @@
+from typing import List
+
 import aiosqlite
 import asyncpg
-from typing import List
+
 from app.config import DATABASE_URL
 
 #lista_cafes: List[str] = [
-#                           "Anaerobic natural", 
-#                         "Black honey", 
-#                         "Cerro azul", 
-#                         "Decaf Honey", 
-#                          "El Obraje", 
-#                          "Finca Las Mercedes", 
- #                           "Gesha village", 
- #                           "Granito de oro", 
- #                           "Honey java", 
+#                           "Anaerobic natural",
+#                         "Black honey",
+#                         "Cerro azul",
+#                         "Decaf Honey",
+#                          "El Obraje",
+#                          "Finca Las Mercedes",
+ #                           "Gesha village",
+ #                           "Granito de oro",
+ #                           "Honey java",
  #                           "La loma",
  #                           "Maracaturra",
  #                           "Montecarlo",
@@ -50,7 +52,7 @@ lista_metodos: List[str] = [
                             "espresso",
                             "espreso",
                             "expresso" ,
-                            "expreso", 
+                            "expreso",
                             "filtro",
                             "filtrado",
                             "filter",
@@ -59,7 +61,7 @@ lista_metodos: List[str] = [
                             "moka",
                             "aeropress",
                             "italiana",
-                            "marzocco", 
+                            "marzocco",
                             "rocket",
                             "krups",
                             "jura",
@@ -79,14 +81,14 @@ lista_metodos: List[str] = [
                             "flair",
                             "miele",
                             "cafelat",
-                            "pavoni", 
-                            "hario", 
-                            "kalita", 
+                            "pavoni",
+                            "hario",
+                            "kalita",
                             "melitta",
-                            "goteo", 
-                            "chemex", 
-                            "moccamaster", 
-                            "origami", 
+                            "goteo",
+                            "chemex",
+                            "moccamaster",
+                            "origami",
                             "fellow"
                         ]
 
@@ -118,7 +120,7 @@ palabras_espresso: List[str] = [
                                 "flair",
                                 "miele",
                                 "cafelat",
-                                "pavoni", 
+                                "pavoni",
                             ]
 
 palabras_filtro: List[str] = [
@@ -131,13 +133,13 @@ palabras_filtro: List[str] = [
                                 "goteo",
                                 "aeropres",
                                 "la italiana",
-                                "hario", 
-                                "kalita", 
-                                "melitta", 
-                                "chemex", 
-                                "camaster", 
-                                "origami", 
-                                "fellow"                        
+                                "hario",
+                                "kalita",
+                                "melitta",
+                                "chemex",
+                                "camaster",
+                                "origami",
+                                "fellow"
 ]
 
 intencion_perfil: List[str] = [
@@ -164,7 +166,7 @@ lista_perfiles: List[str] = [
                              "dulce",
                              "chocola",
                              "poca acidez",
-                             "frutal", 
+                             "frutal",
                              "citrico",
                              "floral",
                              "mucha acidez",

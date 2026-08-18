@@ -1,7 +1,8 @@
 import sys
+import unicodedata
 
 import pysqlite3
-import unicodedata
+
 sys.modules["sqlite3"] = pysqlite3
 
 from langchain_chroma import Chroma

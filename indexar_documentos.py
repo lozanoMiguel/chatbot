@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 print("🚀 INICIANDO INDEXACIÓN DE DOCUMENTOS...")
 print(f"📁 Directorio actual: {os.getcwd()}")
@@ -9,6 +9,7 @@ try:
     # Parche para SQLite
     print("📦 Parcheando SQLite...")
     import sys
+
     import pysqlite3
     sys.modules['sqlite3'] = pysqlite3
     print("✅ SQLite parcheado correctamente")
@@ -19,12 +20,12 @@ except Exception as e:
 try:
     print("📚 Importando librerías...")
     import glob
+
     from dotenv import load_dotenv
     from langchain_community.document_loaders import TextLoader
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
-    from langchain_openai import OpenAIEmbeddings
     from langchain_community.vectorstores import Chroma
-    from langchain_core.documents import Document
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     print("✅ Librerías importadas correctamente")
 except Exception as e:
     print(f"❌ Error al importar librerías: {e}")

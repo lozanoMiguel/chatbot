@@ -36,7 +36,7 @@ def mock_openai():
     """Mock de OpenAI."""
     import app.functions
     import app.routes.chat
-    
+
     with patch.object(app.functions, "get_openai_client") as mock1, \
          patch.object(app.routes.chat, "get_openai_client") as mock2:
         mock_openai_instance = MagicMock()
@@ -54,7 +54,7 @@ def mock_openai():
 def mock_rag():
     """Mock de la búsqueda en ChromaDB."""
     import app.routes.chat
-     
+
     with patch.object(app.routes.chat, "buscar_contexto") as mock:
         mock.return_value = """
         Documento de prueba 1: notas de chocolate y almendra

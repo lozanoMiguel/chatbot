@@ -1,23 +1,23 @@
+import json
 import re
 import unicodedata
-import json
+from typing import Optional
 
 from openai import OpenAI
-from typing import Optional
-from app.config import OPENAI_API_KEY
 
+from app.config import OPENAI_API_KEY
 from app.database import (
-                        lista_metodos, 
-                        lista_perfiles, 
-                        palabras_espresso, 
-                        palabras_filtro, 
-                        intencion_metodo, 
-                        intencion_perfil, 
-                        lista_cafes,
-                        intencion_faq,
-                        intencion_descripcion,
-                        intencion_compra,
-                        intencion_saludo
+    intencion_compra,
+    intencion_descripcion,
+    intencion_faq,
+    intencion_metodo,
+    intencion_perfil,
+    intencion_saludo,
+    lista_cafes,
+    lista_metodos,
+    lista_perfiles,
+    palabras_espresso,
+    palabras_filtro,
 )
 from app.state import estado_usuario
 
@@ -43,15 +43,15 @@ def identificar_metodo(mensaje: str, session_id: str):
         nuevo_metodo = get_metodo(mensaje, True)
         if nuevo_metodo is not None:
             estado_usuario[session_id]["metodo"] = nuevo_metodo
-        
+
 
 def identificar_perfil(mensaje: str, session_id: str):
     if any(per in mensaje for per in lista_perfiles):
         estado_usuario[session_id]["perfil"] = get_perfil(mensaje)
     elif any(intencion in mensaje for intencion in intencion_perfil):
         estado_usuario[session_id]["perfil"] = get_perfil(mensaje, True)
-    
-    
+
+
 def get_metodo(mensaje: str, flag_ia: bool = False) -> Optional[str]:
     respuesta = ""
     if flag_ia:
@@ -64,7 +64,7 @@ def get_metodo(mensaje: str, flag_ia: bool = False) -> Optional[str]:
                             "content": """
                                 Eres un clasificador de intenciones experto en café de especialidad.
                                 Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
-                                - espresso: Si en el mensaje el usuario hace alusion a una maquina de espresso o si solo menciona alguna marca de cafetera:(ej:"De'Longhi", "Nespresso", "Breville", "La Marzocco", "Rocket", "Ninja", etc) 
+                                - espresso: Si en el mensaje el usuario hace alusion a una maquina de espresso o si solo menciona alguna marca de cafetera:(ej:"De'Longhi", "Nespresso", "Breville", "La Marzocco", "Rocket", "Ninja", etc)
                                 - filtro: si el mensaje hace alusion a un metodo de filtrado(ej: "V60", "Chemex", "Prensa francesa", "AeroPress", "Clever Dripper") o marca de metodo de filtrado: (ej: "hario", "cafec", etc)
                                 Si no encaja en ninguna de las categorias devuelve NONE
                             """,
@@ -84,7 +84,7 @@ def get_metodo(mensaje: str, flag_ia: bool = False) -> Optional[str]:
     elif any(palabra in mensaje for palabra in palabras_filtro):
         respuesta = "filtro"
         return respuesta
-    
+
 
 def get_perfil(mensaje: str, flag_ia: bool = False) -> str:
     respuesta = ""
@@ -98,7 +98,7 @@ def get_perfil(mensaje: str, flag_ia: bool = False) -> str:
                                 "content": """
                                             Eres un clasificador de perfiles experto en café de especialidad.
                                             Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
-                                            - tradicional: Sabores clásicos, achocolatados, nueces, caramelo. Acidez suave a media. Cuerpo meloso o jugoso. Ideal para quienes empiezan o buscan un espresso reconfortante. 
+                                            - tradicional: Sabores clásicos, achocolatados, nueces, caramelo. Acidez suave a media. Cuerpo meloso o jugoso. Ideal para quienes empiezan o buscan un espresso reconfortante.
                                             - exotico: Sabores frutales (fresa, mango, mora), florales, cítricos. Acidez más marcada (málica, cítrica, tartárica). Cuerpo cremoso. Para paladares aventureros.
                                             - funky: Sabores licorosos, fermentados, frutas maduras, vino, mermelada. Acidez media a alta. Cuerpo cremoso. Para expertos.
                                             Solo responde con la categoria que corresponda, sino encaja en ninguna devuelve: ""
@@ -149,7 +149,7 @@ def describir_cafe(metodo: str, perfil: str, mensaje: str, ultimos_cafes:Optiona
 
     if cafes_mencionados:
         print(f"Usuario menciono especificamente{cafes_mencionados}")
-        
+
     elif ultimos_cafes:
         cafes_mencionados = ultimos_cafes
         print("Usando ultimos cafes mencionados en la conversacion")
@@ -158,7 +158,7 @@ def describir_cafe(metodo: str, perfil: str, mensaje: str, ultimos_cafes:Optiona
     elif metodo and perfil:
         cafes_mencionados = recomendar_cafe(metodo, perfil)
         print(f"   📌 Usando matriz de funcion recomendar_Cafe: {cafes_mencionados}")
-    
+
     return cafes_mencionados
 
 
@@ -197,7 +197,7 @@ def contains_any(text, terms):
 
 
 def clasificar_intencion_simple(mensaje: str) -> str:
-    
+
     user_norm = normalizar_texto(mensaje)
     if contains_any(user_norm, intencion_faq):
         return "intencion_faq"
@@ -216,255 +216,273 @@ async def clasificar_con_ia(mensaje: str) -> str:
     Usa OpenAI con Salidas Estructuradas para clasificar mensajes sin errores de formato.
     """
     client = get_openai_client()
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                        Eres un clasificador de intenciones experto en café de especialidad.
+                        Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": """
-                    Eres un clasificador de intenciones experto en café de especialidad.
-                    Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
+                        1. Clasifica como "intencion_compra" cuando el usuario quiere encontrar,
+                            elegir o recibir una recomendación de café.
 
-                    1. Clasifica como "intencion_compra" cuando el usuario quiere encontrar,
-                        elegir o recibir una recomendación de café.
+                            La intención de compra puede estar expresada de forma directa o indirecta.
 
-                        La intención de compra puede estar expresada de forma directa o indirecta.
+                            Incluye mensajes donde el usuario:
+                            - Solo menciona el perfil(tradicional, exotico o funky)
+                            - Solo menciona el meotdo(espresso o filtro)
+                            - Quiere comprar o elegir un café.
+                            - Pide una recomendación de café.
+                            - Indica que quiere café para una máquina de espresso.
+                            - Indica que quiere café para un método de filtro.
+                            - Indica un perfil de sabor que busca, como tradicional, exótico o funky.
+                            - Describe sabores que le gustaría encontrar en el café, por ejemplo:
+                            achocolatado, afrutado, floral, fermentado, tropical, dulce o cítrico.
+                            - Dice que no sabe qué café elegir y pide ayuda.
+                            - Busca un café adecuado para una determinada preparación.
 
-                        Incluye mensajes donde el usuario:
-                        - Solo menciona el perfil(tradicional, exotico o funky)
-                        - Solo menciona el meotdo(espresso o filtro)
-                        - Quiere comprar o elegir un café.
-                        - Pide una recomendación de café.
-                        - Indica que quiere café para una máquina de espresso.
-                        - Indica que quiere café para un método de filtro.
-                        - Indica un perfil de sabor que busca, como tradicional, exótico o funky.
-                        - Describe sabores que le gustaría encontrar en el café, por ejemplo:
-                          achocolatado, afrutado, floral, fermentado, tropical, dulce o cítrico.
-                        - Dice que no sabe qué café elegir y pide ayuda.
-                        - Busca un café adecuado para una determinada preparación.
+                            Ejemplos:
+                            - "Quiero comprar café"
+                            - "¿Qué café me recomiendas?"
+                            - "Tengo una máquina de espresso"
+                            - "Tengo una maquina (menciona alguna marca)"
+                            - "Busco un café para V60"
+                            - "Quiero algo tradicional"
+                            - "Quiero un café exótico"
+                            - "Quiero algo funky"
+                            - "Busco un café achocolatado"
+                            - "Quiero un café fermentado"
+                            - "No sé cuál elegir"
 
-                        Ejemplos:
-                        - "Quiero comprar café"
-                        - "¿Qué café me recomiendas?"
-                        - "Tengo una máquina de espresso"
-                        - "Tengo una maquina (menciona alguna marca)"
-                        - "Busco un café para V60"
-                        - "Quiero algo tradicional"
-                        - "Quiero un café exótico"
-                        - "Quiero algo funky"
-                        - "Busco un café achocolatado"
-                        - "Quiero un café fermentado"
-                        - "No sé cuál elegir"
+                            NO clasifiques como "intencion_compra" si el usuario simplemente
+                            quiere conocer las características de un café concreto.
 
-                        NO clasifiques como "intencion_compra" si el usuario simplemente
-                        quiere conocer las características de un café concreto.
+                            Ejemplos que NO pertenecen:
+                            - "Descríbeme el Alacrán"
+                            - "¿Qué origen tiene el Cóndor?"
+                            - "¿Qué notas tiene este café?"
 
-                        Ejemplos que NO pertenecen:
-                        - "Descríbeme el Alacrán"
-                        - "¿Qué origen tiene el Cóndor?"
-                        - "¿Qué notas tiene este café?"
-                        
-                    2. Clasifica como "intencion_descripcion" cuando el usuario quiere
-                        obtener información sobre las características de uno o varios cafés,
-                        sin estar pidiendo principalmente una recomendación.
+                        2. Clasifica como "intencion_descripcion" cuando el usuario quiere
+                            obtener información sobre las características de uno o varios cafés,
+                            sin estar pidiendo principalmente una recomendación.
 
-                        Incluye preguntas sobre:
-                        - Descripción de un café concreto.
-                        - Origen.
-                        - País o región.
-                        - Variedad.
-                        - Proceso.
-                        - Notas de cata.
-                        - Perfil de sabor.
-                        - Acidez.
-                        - Cuerpo.
-                        - Dulzor.
-                        - Características generales de uno o varios cafés.
-                        - Comparaciones entre cafés cuando el objetivo es conocer sus características.
+                            Incluye preguntas sobre:
+                            - Descripción de un café concreto.
+                            - Origen.
+                            - País o región.
+                            - Variedad.
+                            - Proceso.
+                            - Notas de cata.
+                            - Perfil de sabor.
+                            - Acidez.
+                            - Cuerpo.
+                            - Dulzor.
+                            - Características generales de uno o varios cafés.
+                            - Comparaciones entre cafés cuando el objetivo es conocer sus características.
 
-                        Ejemplos:
-                        - "Descríbeme el Alacrán"
-                        - "¿Qué origen tiene el Cóndor?"
-                        - "¿Qué notas tiene este café?"
-                        - "¿Cómo es el Alacrán?"
-                        - "¿De dónde viene este café?"
-                        - "¿Qué proceso tiene el Cóndor?"
-                        - "¿Puedes describirme esos cafés?"
-                        - "¿Cuál es la diferencia entre el Alacrán y el Cóndor?"
+                            Ejemplos:
+                            - "Descríbeme el Alacrán"
+                            - "¿Qué origen tiene el Cóndor?"
+                            - "¿Qué notas tiene este café?"
+                            - "¿Cómo es el Alacrán?"
+                            - "¿De dónde viene este café?"
+                            - "¿Qué proceso tiene el Cóndor?"
+                            - "¿Puedes describirme esos cafés?"
+                            - "¿Cuál es la diferencia entre el Alacrán y el Cóndor?"
 
-                        NO clasifiques como "intencion_descripcion" cuando el usuario
-                        está buscando que le recomiendes un café según sus gustos,
-                        método de preparación o perfil.
+                            NO clasifiques como "intencion_descripcion" cuando el usuario
+                            está buscando que le recomiendes un café según sus gustos,
+                            método de preparación o perfil.
 
-                        Ejemplos que NO pertenecen:
-                        - "Quiero un café achocolatado"
-                        - "¿Qué café me recomiendas?"
-                        - "Tengo una V60, ¿qué café debería comprar?"
-                        
-                    4. Clasifica como "intencion_faq" cuando el usuario haga una pregunta
-                        general relacionada con el café, su preparación, sus características,
-                        sus procesos o sus métodos, y no esté preguntando específicamente
-                        por las características de un café concreto.
+                            Ejemplos que NO pertenecen:
+                            - "Quiero un café achocolatado"
+                            - "¿Qué café me recomiendas?"
+                            - "Tengo una V60, ¿qué café debería comprar?"
 
-                        Esta intención incluye preguntas que permitan orientar al usuario
-                        sobre nuestros cafés, perfiles o métodos de preparación.
+                        4. Clasifica como "intencion_faq" cuando el usuario haga una pregunta
+                            general relacionada con el café, su preparación, sus características,
+                            sus procesos o sus métodos, y no esté preguntando específicamente
+                            por las características de un café concreto.
 
-                        Incluye preguntas sobre:
+                            Esta intención incluye preguntas que permitan orientar al usuario
+                            sobre nuestros cafés, perfiles o métodos de preparación.
 
-                        1. ACIDEZ DEL CAFÉ
-                        - Qué cafés son más ácidos.
-                        - Qué perfiles tienen mayor acidez.
-                        - Qué cafés tienen una acidez más marcada.
-                        - Qué significa que un café sea ácido.
-                        - Qué diferencia hay entre un café ácido y uno suave.
-                        - Qué cafés tienen una acidez parecida a frutas cítricas.
-                        - Busco un café con mucha acidez.
-                        - ¿Qué café debería probar si me gustan los cafés ácidos?
+                            Incluye preguntas sobre:
 
-                        En estos casos, puedes orientar al usuario hacia perfiles
-                        EXÓTICOS o FUNKY cuando corresponda.
-                        Los cafés FUNKY pueden presentar una acidez y fermentación
-                        especialmente marcadas.
+                            1. ACIDEZ DEL CAFÉ
+                            - Qué cafés son más ácidos.
+                            - Qué perfiles tienen mayor acidez.
+                            - Qué cafés tienen una acidez más marcada.
+                            - Qué significa que un café sea ácido.
+                            - Qué diferencia hay entre un café ácido y uno suave.
+                            - Qué cafés tienen una acidez parecida a frutas cítricas.
+                            - Busco un café con mucha acidez.
+                            - ¿Qué café debería probar si me gustan los cafés ácidos?
 
-                        2. PROCESOS DEL CAFÉ
-                        Incluye preguntas sobre procesos como:
-                        - Lavado / lavado tradicional.
-                        - Natural.
-                        - Honey.
-                        - Fermentación.
-                        - Fermentación anaeróbica.
-                        - Fermentación controlada.
-                        - Fermentaciones prolongadas.
-                        - Diferencias entre procesos.
-                        - Cómo influye el proceso en el sabor.
-                        - Qué proceso produce cafés más afrutados.
-                        - Qué proceso produce cafés más dulces.
-                        - Qué proceso puede generar notas más fermentadas o funky.
+                            En estos casos, puedes orientar al usuario hacia perfiles
+                            EXÓTICOS o FUNKY cuando corresponda.
+                            Los cafés FUNKY pueden presentar una acidez y fermentación
+                            especialmente marcadas.
 
-                        Ejemplos:
-                        - ¿Qué diferencia hay entre un café lavado y uno natural?
-                        - ¿Qué es un café fermentado?
-                        - ¿Cómo afecta la fermentación al sabor?
-                        - ¿Qué proceso hace que el café sea más afrutado?
-                        - ¿Qué significa que un café sea anaeróbico?
-                        - ¿Los cafés naturales son más dulces?
-                        - ¿Qué proceso da más acidez?
+                            2. PROCESOS DEL CAFÉ
+                            Incluye preguntas sobre procesos como:
+                            - Lavado / lavado tradicional.
+                            - Natural.
+                            - Honey.
+                            - Fermentación.
+                            - Fermentación anaeróbica.
+                            - Fermentación controlada.
+                            - Fermentaciones prolongadas.
+                            - Diferencias entre procesos.
+                            - Cómo influye el proceso en el sabor.
+                            - Qué proceso produce cafés más afrutados.
+                            - Qué proceso produce cafés más dulces.
+                            - Qué proceso puede generar notas más fermentadas o funky.
 
-                        3. MÉTODOS DE PREPARACIÓN
-                        Incluye preguntas generales sobre métodos de preparación:
-                        - Espresso.
-                        - V60.
-                        - Chemex.
-                        - Aeropress.
-                        - Prensa francesa.
-                        - Filtro en general.
+                            Ejemplos:
+                            - ¿Qué diferencia hay entre un café lavado y uno natural?
+                            - ¿Qué es un café fermentado?
+                            - ¿Cómo afecta la fermentación al sabor?
+                            - ¿Qué proceso hace que el café sea más afrutado?
+                            - ¿Qué significa que un café sea anaeróbico?
+                            - ¿Los cafés naturales son más dulces?
+                            - ¿Qué proceso da más acidez?
 
-                        Ejemplos:
-                        - ¿Qué diferencia hay entre espresso y filtro?
-                        - ¿Qué método resalta más la acidez?
-                        - ¿Qué método resalta más los sabores frutales?
-                        - ¿Qué método produce más cuerpo?
-                        - ¿Qué método debería utilizar para apreciar mejor un café exótico?
+                            3. MÉTODOS DE PREPARACIÓN
+                            Incluye preguntas generales sobre métodos de preparación:
+                            - Espresso.
+                            - V60.
+                            - Chemex.
+                            - Aeropress.
+                            - Prensa francesa.
+                            - Filtro en general.
 
-                        4. CARACTERÍSTICAS GENERALES DEL CAFÉ
-                        Incluye preguntas sobre:
-                        - Acidez.
-                        - Dulzor.
-                        - Cuerpo.
-                        - Intensidad.
-                        - Aroma.
-                        - Notas de cata.
-                        - Tostado.
-                        - Diferencias entre perfiles tradicionales, exóticos y funky.
+                            Ejemplos:
+                            - ¿Qué diferencia hay entre espresso y filtro?
+                            - ¿Qué método resalta más la acidez?
+                            - ¿Qué método resalta más los sabores frutales?
+                            - ¿Qué método produce más cuerpo?
+                            - ¿Qué método debería utilizar para apreciar mejor un café exótico?
 
-                        Ejemplos:
-                        - ¿Qué significa que un café tenga mucho cuerpo?
-                        - ¿Qué diferencia hay entre intensidad y acidez?
-                        - ¿Por qué algunos cafés saben a frutas?
-                        - ¿Por qué algunos cafés tienen notas de chocolate?
-                        - ¿Qué hace que un café sea funky?
-                        - ¿Qué diferencia hay entre un café tradicional y uno exótico?
+                            4. CARACTERÍSTICAS GENERALES DEL CAFÉ
+                            Incluye preguntas sobre:
+                            - Acidez.
+                            - Dulzor.
+                            - Cuerpo.
+                            - Intensidad.
+                            - Aroma.
+                            - Notas de cata.
+                            - Tostado.
+                            - Diferencias entre perfiles tradicionales, exóticos y funky.
 
-                        NO clasifiques como "intencion_faq" cuando el usuario pregunte
-                        específicamente por las características de un café concreto.
+                            Ejemplos:
+                            - ¿Qué significa que un café tenga mucho cuerpo?
+                            - ¿Qué diferencia hay entre intensidad y acidez?
+                            - ¿Por qué algunos cafés saben a frutas?
+                            - ¿Por qué algunos cafés tienen notas de chocolate?
+                            - ¿Qué hace que un café sea funky?
+                            - ¿Qué diferencia hay entre un café tradicional y uno exótico?
 
-                        Ejemplos:
-                        - "¿Qué notas tiene el Alacrán?" → intencion_descripcion
-                        - "¿De dónde viene el Cóndor?" → intencion_descripcion
-                        - "Descríbeme el Alacrán" → intencion_descripcion
+                            NO clasifiques como "intencion_faq" cuando el usuario pregunte
+                            específicamente por las características de un café concreto.
 
-                        Tampoco clasifiques como "intencion_faq" cuando el usuario
-                        simplemente quiera que le recomiendes un café según sus gustos.
+                            Ejemplos:
+                            - "¿Qué notas tiene el Alacrán?" → intencion_descripcion
+                            - "¿De dónde viene el Cóndor?" → intencion_descripcion
+                            - "Descríbeme el Alacrán" → intencion_descripcion
 
-                        Ejemplos:
-                        - "Quiero un café achocolatado" → intencion_compra
-                        - "Quiero un café exótico" → intencion_compra
-                        - "¿Qué café me recomiendas?" → intencion_compra
-                        - "Tengo una V60, ¿qué café me recomiendas?" → intencion_compra
-                        
-                    3. Clasifica como "intencion_saludo" cuando el mensaje sea únicamente
-                        un saludo, agradecimiento o despedida y no contenga otra intención
-                        relacionada con el café o la tienda.
+                            Tampoco clasifiques como "intencion_faq" cuando el usuario
+                            simplemente quiera que le recomiendes un café según sus gustos.
 
-                        Incluye:
-                        - Saludos.
-                        - Agradecimientos.
-                        - Despedidas.
-                        - Expresiones breves de cortesía.
+                            Ejemplos:
+                            - "Quiero un café achocolatado" → intencion_compra
+                            - "Quiero un café exótico" → intencion_compra
+                            - "¿Qué café me recomiendas?" → intencion_compra
+                            - "Tengo una V60, ¿qué café me recomiendas?" → intencion_compra
 
-                        Ejemplos:
-                        - "Hola"
-                        - "Buenas"
-                        - "Hola, ¿qué tal?"
-                        - "Gracias"
-                        - "Muchas gracias"
-                        - "Perfecto, gracias"
-                        - "Adiós"
-                        - "Hasta luego"
-                        - "Nos vemos"
+                        3. Clasifica como "intencion_saludo" cuando el mensaje sea únicamente
+                            un saludo, agradecimiento o despedida y no contenga otra intención
+                            relacionada con el café o la tienda.
 
-                        Si el mensaje contiene una petición además del saludo,
-                        clasifícalo según la intención de la petición.
+                            Incluye:
+                            - Saludos.
+                            - Agradecimientos.
+                            - Despedidas.
+                            - Expresiones breves de cortesía.
 
-                        Ejemplos:
-                        - "Hola, ¿qué café me recomiendas?" → intencion_compra
-                        - "Buenas, ¿qué origen tiene el Alacrán?" → intencion_descripcion
-                    
-                    4. Utiliza "fallback" cuando el mensaje no corresponda
-                        a ninguna de las intenciones anteriores o esté fuera
-                        del ámbito del asistente. 
-                        Ejemplos
-                        - "Messi"
-                        - "Que hora es?
-                        - "Hara buen clima mañana?
-                    Devuelve únicamente JSON con este formato:
+                            Ejemplos:
+                            - "Hola"
+                            - "Buenas"
+                            - "Hola, ¿qué tal?"
+                            - "Gracias"
+                            - "Muchas gracias"
+                            - "Perfecto, gracias"
+                            - "Adiós"
+                            - "Hasta luego"
+                            - "Nos vemos"
 
-                    {
-                        "intent": "string",
-                        "confidence": 0.0
-                    }
+                            Si el mensaje contiene una petición además del saludo,
+                            clasifícalo según la intención de la petición.
 
-                    La confidence debe estar entre 0 y 1.
+                            Ejemplos:
+                            - "Hola, ¿qué café me recomiendas?" → intencion_compra
+                            - "Buenas, ¿qué origen tiene el Alacrán?" → intencion_descripcion
 
-                    Utiliza:
-                    - 0.90 - 1.00: intención muy clara
-                    - 0.75 - 0.89: intención bastante clara
-                    - 0.50 - 0.74: intención ambigua
-                    - 0.00 - 0.49: intención muy incierta
-                    
-                """,
-            },
-            {"role": "user", "content": mensaje},
-        ],
-        temperature=0.5,
-    )
+                        4. Utiliza "fallback" cuando el mensaje no corresponda
+                            a ninguna de las intenciones anteriores o esté fuera
+                            del ámbito del asistente.
+                            Ejemplos
+                            - "Messi"
+                            - "Que hora es?
+                            - "Hara buen clima mañana?
+                            
+                        Devuelve únicamente JSON con este formato:
 
-    # La IA garantiza devolver uno de los strings definidos en el Literal
-    clasificacion = response.choices[0].message.content
-    datos = json.loads(clasificacion)
-    intent = datos["intent"]
-    print(datos)
-    if datos["confidence"] < 75 and datos["confidence"] > 50:
-        intent = "intencion_compra"
-    return intent
+                        {
+                            "intent": "string",
+                            "confidence": 0.0
+                        }
+
+                        La confidence debe estar entre 0 y 1.
+
+                        Utiliza:
+                        - 0.90 - 1.00: intención muy clara
+                        - 0.75 - 0.89: intención bastante clara
+                        - 0.50 - 0.74: intención ambigua
+                        - 0.00 - 0.49: intención muy incierta
+
+                    """,
+                },
+                {"role": "user", "content": mensaje},
+            ],
+            temperature=0.5,
+            response_format={"type": "json_object"}
+        )
+
+        
+        clasificacion = response.choices[0].message.content.strip()
+        json_match = re.search(r'\{.*\}', clasificacion, re.DOTALL)
+        if json_match:
+            clasificacion = json_match.group()
+        else:
+            print(f"⚠️ No se encontró JSON en la respuesta: {clasificacion}")
+            return "intencion_compra"
+        datos = json.loads(clasificacion)
+        intent = datos.get("intent", "intencion_compra")
+        confidence = datos.get("confidence", 0.0)
+        print(datos)
+        if confidence < 75 and confidence > 50:
+            intent = "intencion_compra"
+        return intent
+    
+    except json.JSONDecodeError as e:
+        print(f"❌ Error decodificando JSON: {e}")
+        print(f"   Respuesta recibida: {clasificacion[:200] if 'clasificacion' in locals() else 'No hay respuesta'}")
+        return "intencion_compra"
+    
+    except Exception as e:
+        print(f"❌ Error en clasificar_con_ia: {e}")
+        return "intencion_compra"
