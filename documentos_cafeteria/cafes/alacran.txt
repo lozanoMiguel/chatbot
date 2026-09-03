@@ -8,6 +8,7 @@ PERFIL: Tradicional (nivel 2/3)
 SABOR: Achocolatado
 NOTAS: Cookie de chocolate, almendra y nectarina
 ACIDEZ: Suave
+PUNTAJE_ACIDEZ: 3
 CUERPO: Meloso
 PUNTAJE_SCA: 85
 DESCRIPCION_CORTA: Café tradicional achocolatado, acidez suave y cuerpo meloso. Ideal para espresso.

@@ -1,0 +1,15 @@
+NOMBRE: Tucán
+PAIS: Colombia
+REGION: Huila
+PROCESO: Natural
+VARIEDAD: Castillo
+TOSTADO: Expresso
+PERFIL: Funky
+SABOR: Vinoso
+NOTAS: Mango, Licor de plátano y Mazapán
+ACIDEZ: Málica y láctica, compleja
+PUNTAJE_ACIDEZ: 9
+CUERPO: Meloso
+PUNTAJE_SCA: 92
+DESCRIPCION_CORTA: Café colombiano fermentado y complejo, notas vinosas a sandía, ruibarbo y cacao. No apto para todos los paladares.
+RECOMENDACION: Para quienes buscan nuevos retos en taza, dentro del perfil más experimental de la casa.

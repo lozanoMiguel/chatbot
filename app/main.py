@@ -13,7 +13,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from app.database import init_db
+from app.database import init_db, close_pool
 from app.routes import chat_router, debug_router, health_router
 
 
@@ -22,6 +22,7 @@ from app.routes import chat_router, debug_router, health_router
 async def lifespan(app: FastAPI):
     await init_db()
     yield
+    await close_pool()
     print("🛑 Servidor detenido")
 
 

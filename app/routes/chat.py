@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 
-from app.database import save_message
+from app.database import save_message,get_conversation_history
 from app.functions import (
     clasificar_con_ia,
     clasificar_intencion_simple,
@@ -11,11 +11,10 @@ from app.functions import (
     identificar_metodo,
     identificar_perfil,
     normalizar_texto,
-    recomendar_cafe,
 )
 from app.models import ChatRequest, ChatResponse, Request, Response
-from app.rag import buscar_contexto
-from app.state import estado_usuario
+from app.rag import buscar_contexto, obtener_cafes_por_nombre, top_cafes_por_acidez, top_cafes_por_puntaje,filtrar_por_metadata, elegir_criterio_discriminante,  candidatos_por_metodo
+from app.models.preferencias_usuario import estado_usuario
 
 router = APIRouter()
 
@@ -28,45 +27,56 @@ async def preguntar(pregunta: Request):
     print(f"\n📨 [{session_id[:8]}] Usuario: {user_message}")
 
     try:
+        
+        historial_reciente = await get_conversation_history(session_id, limit=4)
         await save_message(session_id, "user", user_message)
 
         user_lower = normalizar_texto(user_message)
 
         identificar_metodo(user_lower, session_id)
-        identificar_perfil(user_lower, session_id)
+        #identificar_perfil(user_lower, session_id)
 
         # asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriormente, utilizamos dicha variable sin tocar la original: estado_usuario)
         estado = estado_usuario[session_id]
         print(
-            f"   📊 Estadooo: método={estado['metodo']}, perfil={estado['perfil']}, ultimos_cafes={estado['ultimos_cafes']}"
+            f"   📊 Estadooo: método={estado.metodo}, ultimos_cafes={estado.ultimos_cafes}"
         )
 
         # ========== IDENTIFICAION DE INTENCION EN EL MENSAJE ==========
-        intencion = clasificar_intencion_simple(user_lower)
-        print(f"   🧠 Intención: {intencion}")
+        resultado_ia = {}
+        intencion = None
+
+        if estado.afinando:
+            opciones = estado.afinando["opciones"]
+            if any(clave in user_lower for clave in opciones.keys()):
+                intencion = "intencion_recomendacion"
+                print("   🎯 Respondiendo afinamiento activo, forzando intención")
+            # si no matchea ninguna opción, no seteamos intencion acá —
+            # cae naturalmente al bloque de abajo para clasificar normal
 
         if intencion is None:
-            # Si las reglas simples no pudieron clasificar, usamos IA
-            print("   🤔 Mensaje ambiguo, usando IA para clasificar...")
-            intencion = await clasificar_con_ia(user_message)
-            print(f"   🧠 IA clasificó como: {intencion}")
-        else:
-            print(f"   📏 Reglas simples clasificaron como: {intencion}")
+            resultado_simple = clasificar_intencion_simple(user_lower)
+            print(f"   🧠 Intención: {resultado_simple}")
+
+            if resultado_simple is None:
+                print("   🤔 Mensaje ambiguo, usando IA para clasificar...")
+                resultado_ia = await clasificar_con_ia(user_message, historial_reciente)
+                intencion = resultado_ia["intent"]
+                print(f"   🧠 IA clasificó como: {intencion}")
+            else:
+                resultado_ia = resultado_simple
+                intencion = resultado_simple["intent"]
+                print(f"   📏 Reglas simples clasificaron como: {intencion}")
 
         # ========== RUTA 1: IA para descripciones de cafe ==========
         if intencion == "intencion_descripcion":
             print("   🤖 Usando IA + RAG")
-            cafes_a_describir = describir_cafe(estado["metodo"], estado["perfil"], user_lower, estado["ultimos_cafes"])
+            cafes_a_describir = describir_cafe(estado.metodo, estado.perfil, user_lower, estado.ultimos_cafes)
 
             if cafes_a_describir:
                 # Buscar contexto SOLO para esos cafés
-                contexto_parts = []
-
-                for cafe in cafes_a_describir:
-                    print(f"\n🔍 Buscando: {cafe}")
-                    contexto_parts.append(buscar_contexto(cafe))
-
-                contexto = "\n\n".join(contexto_parts)
+                print(f"\n🔍 Buscando: {cafes_a_describir}")
+                contexto = obtener_cafes_por_nombre(cafes_a_describir)
                 print(f"contexto:{contexto}")
 
                 system_prompt = f"""
@@ -78,11 +88,12 @@ async def preguntar(pregunta: Request):
                     {contexto}
 
                     REGLAS DE FORMATO OBLIGATORIAS:
-                    1. Escribe CADA café en una línea NUEVA.
-                    2. Menciona el nombre del cafe en formato negrita.
-                    3. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
-                    4. Puedes agregar 2 o 3 emojis, no mas.
-                    5. Ejemplo de formato CORRECTO:
+                    1. Si el usuario especifica la cantidad de cafes que quiere que le recomiendes, solo recomienda esa cantidado, ni mas ni menos. por ej: "recomiendame un cafe", "recomiendame dos cafes"
+                    2. Escribe CADA café en una línea NUEVA.
+                    3. Menciona el nombre del cafe en formato negrita.
+                    4. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
+                    5. Puedes agregar 2 o 3 emojis, no mas.
+                    6. Ejemplo de formato CORRECTO:
 
                     - Alacrán: Cafe de El Salvador, de la region de Apaneca-Ilamatepec. Tiene notas a chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
 
@@ -107,30 +118,134 @@ async def preguntar(pregunta: Request):
 
         # ========== RUTA 2: IA descripciones y consultas ==========
         elif intencion == "intencion_faq":
-            contexto = buscar_contexto(user_lower)
-            system_prompt = f"""
-                                Eres un experto en el mundo del cafe de especialidad, tienes bastos conocimientos sobre tostado de cafe, sabes recomendar acertadamente y eres un excelso barista.
-                                Utiliza el siguiente contexto para responder o acude a tu base de conocimiento.
+            faq_modo = resultado_ia.get("faq_modo", "conceptual")
+            alcance = resultado_ia.get("alcance", "catalogo_completo")
 
-                                CONTEXTO RAG:
-                                {contexto}
-
-                                REGLAS DE FORMATO:
-                                - Si mencionas cafes, mencionalos en formato negrita.
-                                - Puedes utilizar emoticones si deseas, 2 o 3 no mas.
-                                """
-            client = get_openai_client()
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message},
-                ],
-                temperature=0.5,
-                max_tokens=500,
+            # Si el usuario se refiere a cafés ya mencionados, restringimos el
+            # ranking/filtro a esos, siempre que tengamos algo guardado en estado
+            
+            nombres_base = (
+                estado.ultimos_cafes
+                if alcance == "cafes_previos" and estado.ultimos_cafes
+                else None
             )
-            respuesta_texto = response.choices[0].message.content
 
+            if faq_modo == "ranking":
+                n = resultado_ia.get("n") or 1
+                ascendente = resultado_ia.get("orden") == "asc"
+                atributo = resultado_ia.get("atributo_ranking")
+                if atributo == "acidez":
+                    contexto = top_cafes_por_acidez(n=n, ascendente=ascendente, nombres=nombres_base)
+                else:
+                    contexto = top_cafes_por_puntaje(n=n, ascendente=ascendente, nombres=nombres_base)
+
+            elif faq_modo == "filtro":
+                filtros = resultado_ia.get("filtros") or {}
+                contexto = filtrar_por_metadata(**filtros) if filtros else buscar_contexto(user_lower, tipo="faq")
+                print(f"   📦 Cafés en contexto: {[l for l in contexto.split(chr(10)) if l.startswith('NOMBRE')]}")
+            else:
+                contexto = buscar_contexto(user_lower, tipo="faq")
+                
+            nombres_esperados = [
+                l.replace("NOMBRE:", "").strip()
+                for l in contexto.split("\n")
+                if l.strip().startswith("NOMBRE")
+]
+                
+            if faq_modo in ("ranking", "filtro"):
+                system_prompt = f"""
+                Eres un experto en café de especialidad de nuestra cafetería.
+
+                Usa ÚNICAMENTE la siguiente información para responder. Los cafés
+                mencionados abajo son TODO nuestro catálogo relevante a esta
+                pregunta — no existen otros.
+
+                CONTEXTO RAG:
+                {contexto}
+                
+                DEBES mencionar EXACTAMENTE esta cantidad {len(nombres_esperados)},
+                ni uno menos: {", ".join(nombres_esperados)}.
+
+                La selección de cuáles cafés califican para esta pregunta YA fue
+                hecha antes de dártelos (por eso están en el contexto) — no vuelvas
+                a evaluar si "realmente" califican según tu propio criterio. Tu
+                única tarea es describir cada uno de los {len(nombres_esperados)}
+                cafés listados arriba, ninguno más, ninguno menos.
+
+                Si el contexto está vacío, dilo explícitamente ("no tenemos cafés
+                que cumplan ese criterio por ahora") en vez de inventar datos.
+
+                NUNCA menciones países, cafés o marcas que no aparezcan en el
+                contexto de arriba. No uses tu conocimiento general de café para
+                completar la respuesta.
+
+                REGLAS DE FORMATO:
+                - Menciona cada café en formato negrita y puedes agregarle a cada uno de ellos, uno o dos emojis, no mas
+                
+            """
+            else:  # conceptual — aquí sí tiene sentido dar más libertad
+                system_prompt = f"""
+                    Eres un experto en el mundo del café de especialidad, con amplios
+                    conocimientos sobre tueste, preparación y catación.
+
+                    Usa el siguiente contexto si es relevante para la pregunta; si no
+                    aporta nada, puedes responder con tu conocimiento general sobre
+                    café.
+
+                    CONTEXTO RAG:
+                    {contexto}
+
+                    REGLAS DE FORMATO:
+                    - Si mencionas cafés, hazlo en formato negrita.
+                    - Puedes usar 2 o 3 emojis, no más.
+                """                  
+            client = get_openai_client()
+            temperature = 0.1 if faq_modo in ("ranking", "filtro") else 0.5
+            response = client.chat.completions.create(
+                                model="gpt-4o-mini",
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": user_message},
+                                ],
+                                temperature=temperature,
+                                max_tokens=500,
+                            )
+            respuesta_texto = response.choices[0].message.content    
+            if faq_modo in ("ranking", "filtro") and nombres_esperados:
+                faltantes = [n for n in nombres_esperados if n not in respuesta_texto]
+                if faltantes:
+                    print(f"   ⚠️ El modelo omitió: {faltantes}. Reintentando con corrección...")
+                    
+                    system_prompt_reforzado = system_prompt + f"""
+
+                            ADVERTENCIA: en un intento anterior omitiste mencionar: {", ".join(faltantes)}.
+                            Verifica que TODOS los cafés del contexto aparezcan en tu respuesta.
+                            Mantén el MISMO formato pedido arriba (nombre en negrita, descripción
+                            natural breve, 1-2 emojis por café). NO copies los campos crudos del
+                            contexto (PAIS:, REGION:, PROCESO:, etc.) tal cual — redacta una
+                            descripción natural igual que harías para cualquier otro café.
+                            """
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": system_prompt_reforzado},
+                            {"role": "user", "content": user_message},
+                            {"role": "assistant", "content": respuesta_texto},
+                            {
+                                "role": "user",
+                                "content": (
+                                    f"Te faltó incluir: {', '.join(faltantes)}. "
+                                    f"Reescribe la respuesta completa incluyendo "
+                                    f"TODOS los {len(nombres_esperados)} cafés: "
+                                    f"{', '.join(nombres_esperados)}."
+                                ),
+                            },
+                        ],
+                        temperature=0.1,
+                        max_tokens=500,
+                    )
+                respuesta_texto = response.choices[0].message.content
+ 
         # ========== RUTA 3: Saludos y agradecimientos ==========
         elif intencion == "intencion_saludo":
             if "gracias" in user_lower:
@@ -142,38 +257,41 @@ async def preguntar(pregunta: Request):
                     "¡Hola! ¿Cómo tomas tu café, en máquina de espresso o en filtro?"
                 )
 
-        # ========== RUTA 4: Lógica dura (compra) ==========
-        elif intencion == "intencion_compra":
-            print("   💻 Usando lógica dura")
-            if not estado["metodo"]:
-                respuesta_texto = ("¡Perfecto! ☕ Primero, ¿cómo lo vas a preparar? Espresso o filtro?")
-            elif estado["metodo"] and not estado["perfil"]:
-                respuesta_texto = (
-                    f"""Perfecto, para {estado["metodo"]} ¿Qué perfil te apetece?
+        # ========== RUTA 4: Lógica dura (recomendacion) ==========
+        elif intencion == "intencion_recomendacion":
+            respuesta_texto = None
+            cafes_a_describir = None
 
-                        🌰 Tradicional — clásico y equilibrado
-                        🍊 Exótico — frutal y complejo
-                        🧪 Funky — fermentado e intenso
-                    """)
-            else:
-                cafes_recomendados = recomendar_cafe(
-                    estado["metodo"], estado["perfil"], session_id
-                )
-                if not cafes_recomendados:
-                    respuesta_texto = f"No tenemos cafés {estado['perfil']} para {estado['metodo']}. ¿Te gustaría probar otro perfil?"
-                #elif len(cafes_recomendados) == 1:
+            if estado.afinando:
+                opciones = estado.afinando["opciones"]
+                elegido = next((cafes for clave, cafes in opciones.items() if clave in user_lower), None)
+                estado.afinando = None
+                estado.candidatos_actuales = elegido if elegido else estado.candidatos_actuales
 
-                    #respuesta_texto = f"Para {estado['metodo']} y perfil {estado['perfil']}, te recomiendo {cafes_recomendados[0]}. ¡Es una excelente elección!"
-               # else:
-                #    respuesta_texto =  f"Para {estado['metodo']} y perfil {estado['perfil']}, te recomiendo: {', '.join(cafes_recomendados[:-1])} y {cafes_recomendados[-1]}."
+            elif not estado.metodo:
+                respuesta_texto = "¡Perfecto! ☕ Primero, ¿cómo lo vas a preparar? Espresso o filtro?"
+
+            elif not estado.candidatos_actuales:
+                estado.candidatos_actuales = candidatos_por_metodo(estado.metodo)
+                if not estado.candidatos_actuales:
+                    respuesta_texto = f"No tenemos cafés disponibles para {estado.metodo} por ahora."
+
+            # Si no se resolvió arriba (pidiendo método, o "no tenemos"), seguimos:
+            if respuesta_texto is None:
+                siguiente_pregunta = elegir_criterio_discriminante(estado.candidatos_actuales)
+                if siguiente_pregunta:
+                    estado.afinando = siguiente_pregunta
+                    respuesta_texto = siguiente_pregunta["pregunta"]
                 else:
-                    contexto_parts = []
-                    for cafe in cafes_recomendados:
-                        print(f"\n🔍 Buscando: {cafe}")
-                        contexto_parts.append(buscar_contexto(cafe))
-                    contexto = "\n\n".join(contexto_parts)
-                    system_prompt = f"""
-                                        Eres dueño y tostador de una cafeteria que vende su cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes_recomendados)}.
+                    cafes_a_describir = estado.candidatos_actuales
+
+            if cafes_a_describir:
+                print(f"\n🔍 Buscando: {cafes_a_describir}")
+                contexto = obtener_cafes_por_nombre(cafes_a_describir)
+                estado.ultimos_cafes = cafes_a_describir
+                estado.candidatos_actuales = []
+                system_prompt = f"""
+                                        Eres dueño y tostador de una cafeteria que vende su cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes_a_describir)}.
 
                                         No menciones ningún otro café que no esté en esta lista.
 
@@ -181,7 +299,7 @@ async def preguntar(pregunta: Request):
                                         {contexto}
 
                                         REGLAS DE FORMATO OBLIGATORIAS:
-                                        1. Empieza la respuesta diciendo: Para {estado['metodo']} y perfil {estado['perfil']} te recomiendo:
+                                        1. Empieza la respuesta diciendo: Para {estado.metodo} te recomiendo:
                                         2. Escribe CADA café en una línea NUEVA.
                                         3. Menciona el nombre del cafe en formato negrita.
                                         4. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
@@ -193,8 +311,8 @@ async def preguntar(pregunta: Request):
                                         Responde de forma natural y entusiasta, pero respetando el formato.
 
                                         """
-                    client = get_openai_client()
-                    response = client.chat.completions.create(
+                client = get_openai_client()
+                response = client.chat.completions.create(
                                         model="gpt-4o-mini",
                                         messages=[
                                             {"role": "system", "content": system_prompt},
@@ -203,7 +321,8 @@ async def preguntar(pregunta: Request):
                                         temperature=0.3,
                                         max_tokens=500,
                                     )
-                    respuesta_texto = response.choices[0].message.content
+                respuesta_texto = response.choices[0].message.content
+      
         # ========== RUTA 5: Fallback ==========
         else: #fallback
             respuesta_texto = "Puedo ayudarte a encontrar el café que mejor se adapte a tus gustos, solo cuentame como lo preparas en casa :)"

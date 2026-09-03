@@ -1,0 +1,16 @@
+NOMBRE: Oryx
+PAIS: Etiopía
+REGION: Sidama
+PROCESO: Lavado
+VARIEDAD: Heirloom
+ALTITUD: 2.100m
+TOSTADO: Expresso
+PERFIL: Exótico
+SABOR: Afrutado
+NOTAS: Caramelo, albaricoque y jazmín
+ACIDEZ: Cítrica balanceada
+PUNTAJE_ACIDEZ: 5
+CUERPO: Mantequilloso equilibrado
+PUNTAJE_SCA: 86.25
+DESCRIPCION_CORTA: Café etíope de Sidama, floral y afrutado, una de las opciones más equilibradas entre chocolate y fruta.
+RECOMENDACION: Apto para todos los públicos, ideal para quienes buscan sabores frescos y dulces en espresso.

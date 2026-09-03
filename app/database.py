@@ -4,28 +4,8 @@ import aiosqlite
 import asyncpg
 
 from app.config import DATABASE_URL
+_pool: asyncpg.Pool | None = None
 
-#lista_cafes: List[str] = [
-#                           "Anaerobic natural",
-#                         "Black honey",
-#                         "Cerro azul",
-#                         "Decaf Honey",
-#                          "El Obraje",
-#                          "Finca Las Mercedes",
- #                           "Gesha village",
- #                           "Granito de oro",
- #                           "Honey java",
- #                           "La loma",
- #                           "Maracaturra",
- #                           "Montecarlo",
- #                           "Natural gesha",
- #                           "Natural limau",
- #                           "Organic SHB",
- #                           "Peaberry de Kenia",
- #                           "Sidra del ecuador",
- #                           "Tropical natural",
- #                           "Washed geisha"
- #                       ]
 
 lista_cafes: List[str] = [
     "Alacrán", "Cóndor", "Lince", "Yurumi", "Dimeti", "Delfin Rosado", "Puma", "Coyote","Correcaminos", "Nebiri"
@@ -212,6 +192,24 @@ intencion_faq: List[str] = [
                             "preinfusion"
 ]
 
+seniales_listado:List[str] = [
+                        "cuales son los cafes",
+                        "que cafes",
+                        "cafes de",
+                        "cafes con",
+                        "cafes mas",
+                        "cafes menos"
+]
+
+seniales_ranking:List[str] = [
+                                " mejor ", 
+                                " peor ", 
+                                " mayor ", 
+                                " menor ", 
+                                "top ", 
+                                "ranking"
+                            ]
+
 intencion_descripcion: List[str] = [
                             "describeme",
                             "descripcion",
@@ -224,9 +222,9 @@ intencion_descripcion: List[str] = [
                             "que notas tiene"
 ]
 
-intencion_compra: List[str] = [
-                                "recomiendame",
-                                "que cafe me recomiendas",
+intencion_recomendacion: List[str] = [
+                                #"recomiendame",
+                                #"que cafe me recomiendas",
                                 "quiero un cafe",
                                 "busco un cafe",
                                 "me gustaria un cafe",
@@ -258,11 +256,39 @@ async def check_connection():
     return True
 
 
+
+ 
+ 
+async def get_pool() -> asyncpg.Pool:
+    """
+    Crea el pool UNA sola vez y lo reutiliza en todas las funciones
+    siguientes, en vez de abrir/cerrar una conexión nueva en cada una
+    (que era lo que agotaba las conexiones disponibles de Supabase).
+    """
+    global _pool
+    if _pool is None:
+        _pool = await asyncpg.create_pool(
+            DATABASE_URL,
+            statement_cache_size=0,  # necesario por el pooler de Supabase (pgbouncer en modo transacción)
+            min_size=1,
+            max_size=6,
+        )
+    return _pool
+ 
+ 
+async def close_pool():
+    """Cierra el pool limpiamente al apagar el servidor."""
+    global _pool
+    if _pool is not None:
+        await _pool.close()
+        _pool = None
+ 
+ 
 async def init_db():
     flag = 0
     if DATABASE_URL.startswith("postgresql"):
-        conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
-        await conn.execute("""
+        pool = await get_pool()  # crea el pool (si no existe) y lo reutiliza
+        await pool.execute("""
             CREATE TABLE IF NOT EXISTS conversations (
                 id SERIAL PRIMARY KEY,
                 session_id TEXT NOT NULL,
@@ -271,11 +297,10 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        await conn.execute(
+        await pool.execute(
             "CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)"
         )
         flag = 1
-        await conn.close()
     else:
         async with aiosqlite.connect(DATABASE_URL) as db:
             await db.execute("""
@@ -314,10 +339,28 @@ async def save_message(session_id: str, role: str, content: str):
 
 
 async def get_conversation_history(session_id: str, limit: int = 10):
+    """
+    Devuelve los últimos `limit` mensajes de la sesión, en orden
+    cronológico (del más antiguo al más reciente) — listos para pasarle
+    a clasificar_con_ia() como contexto acotado.
+ 
+    Usa `id` (serial, autoincremental) en vez de `created_at` para el
+    orden: created_at puede tener timestamps duplicados si dos mensajes
+    se insertan muy rápido, mientras que `id` es siempre estrictamente
+    secuencial y refleja el orden real de inserción sin ambigüedad.
+    """
     if DATABASE_URL.startswith("postgresql"):
         conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0)
         rows = await conn.fetch(
-            "SELECT role, content FROM conversations WHERE session_id = $1 ORDER BY created_at ASC LIMIT $2",
+            """
+            SELECT role, content FROM (
+                SELECT role, content, id FROM conversations
+                WHERE session_id = $1
+                ORDER BY id DESC
+                LIMIT $2
+            ) sub
+            ORDER BY id ASC
+            """,
             session_id,
             limit,
         )
@@ -326,7 +369,15 @@ async def get_conversation_history(session_id: str, limit: int = 10):
     else:
         async with aiosqlite.connect(DATABASE_URL) as db:
             async with db.execute(
-                "SELECT role, content FROM conversations WHERE session_id = ? ORDER BY created_at ASC LIMIT ?",
+                """
+                SELECT role, content FROM (
+                    SELECT role, content, id FROM conversations
+                    WHERE session_id = ?
+                    ORDER BY id DESC
+                    LIMIT ?
+                )
+                ORDER BY id ASC
+                """,
                 (session_id, limit),
             ) as cursor:
                 rows = await cursor.fetchall()

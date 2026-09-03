@@ -8,6 +8,7 @@ PERFIL: Tradicional (nivel 2/3)
 SABOR: Afrutado
 NOTAS: Crema de Cacao, Ciruela y Nueces
 ACIDEZ: Málica y cítrica
+PUNTAJE_ACIDEZ: 5
 CUERPO: Cremoso
 PUNTAJE_SCA: 86
 DESCRIPCION_CORTA: Café tradicional con toques afrutados (ciruela) y cacao.

@@ -8,6 +8,7 @@ PERFIL: Exótico (nivel 2/3)
 SABOR: Afrutado
 NOTAS: Moras, Chocolate 80% y Melocotón
 ACIDEZ: Media tartárica y láctica
+PUNTAJE_ACIDEZ: 7
 CUERPO: Cremoso
 PUNTAJE_SCA: 87.5
 DESCRIPCION_CORTA: Café exótico para filtro, con notas de frutos del bosque y chocolate.

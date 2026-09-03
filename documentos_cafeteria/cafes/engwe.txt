@@ -1,0 +1,14 @@
+NOMBRE: Engwe
+PAIS: Uganda
+REGION: Rwenzori Mountains
+PROCESO: Natural
+VARIEDAD: SL14
+TOSTADO: Filtro
+PERFIL: Exotico
+SABOR: Afrutado
+NOTAS: Marshmallow, mermelada de fresa & almendras
+ACIDEZ: acidez tartarica media
+PUNTAJE_ACIDEZ: 8
+CUERPO: jugoso
+DESCRIPCION_CORTA: El resultado es un café jugoso, dulce y floral, con notas a marshmallow, mermelada de fresa y un sutil recuerdo a almendra y mazapán. De esos filtros que tomarías cada día y nunca te cansarías.
+RECOMENDACION: Cualquier método de percolación e inmersión.

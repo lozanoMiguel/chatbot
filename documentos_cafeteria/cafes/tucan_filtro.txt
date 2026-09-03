@@ -1,0 +1,14 @@
+NOMBRE: Tucán 
+PAIS: Colombia
+REGION: Huila
+PROCESO: Natural
+VARIEDAD: Castillo
+TOSTADO: Filtro
+PERFIL: Funky (nivel 3/3)
+SABOR: Vinoso
+NOTAS: Pomelo, vino blanco y caramelo claro
+ACIDEZ: acidez citrica y tartarica
+PUNTAJE_ACIDEZ: 8
+CUERPO: melozo
+DESCRIPCION_CORTA: Versión filtro del mismo lote fermentado, notas vinosas a sandía, ruibarbo y cacao. No apto para todos los paladares.
+RECOMENDACION: Para quienes buscan nuevos retos en taza mediante métodos filtrados como V60 o Chemex.

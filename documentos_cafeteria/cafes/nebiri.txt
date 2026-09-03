@@ -8,6 +8,7 @@ PERFIL: Exótico (nivel 2/3)
 SABOR: Afrutado
 NOTAS: Albaricoque, Mango y Azúcar Mascabado
 ACIDEZ: Cítrica y tartárica
+PUNTAJE_ACIDEZ: 9
 CUERPO: Cremoso
 PUNTAJE_SCA: 88
 DESCRIPCION_CORTA: Café etíope natural para filtro, explosión de frutas tropicales.

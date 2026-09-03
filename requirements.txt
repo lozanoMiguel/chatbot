@@ -2,12 +2,12 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.0
 openai>=1.40.0
 python-dotenv==1.0.0
-chromadb>=0.4.24
+chromadb==0.5.23
 langchain-community
 langchain-core
 langchain-text-splitters
 langchain-openai
-langchain-chroma
+langchain-chroma==0.1.4
 aiosqlite>=0.19.0
 asyncpg==0.29.0
 sqlalchemy==2.0.25
