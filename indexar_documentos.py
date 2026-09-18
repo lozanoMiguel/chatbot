@@ -1,4 +1,5 @@
 import os
+import re
 import sys
  
 print("🚀 INICIANDO INDEXACIÓN DE DOCUMENTOS...")
@@ -26,6 +27,7 @@ try:
     from langchain_core.documents import Document
     from langchain_chroma import Chroma
     from langchain_openai import OpenAIEmbeddings
+    from chromadb.config import Settings
     print("✅ Librerías importadas correctamente")
 except Exception as e:
     print(f"❌ Error al importar librerías: {e}")
@@ -53,6 +55,31 @@ def normalizar_texto(texto: str) -> str:
     texto_normalizado = unicodedata.normalize("NFD", texto)
     sin_acentos = "".join(c for c in texto_normalizado if unicodedata.category(c) != "Mn")
     return sin_acentos.lower()
+
+
+def parse_perfil(valor_crudo: str) -> tuple[str, int]:
+    """
+    Separa el campo PERFIL en categoria + nivel de intensidad.
+
+    'Exótico (nivel 1/3)' -> ('exotico', 1)
+    'Funky (nivel 3/3)'   -> ('funky', 3)
+    'Exotico'             -> ('exotico', 0)   # sin nivel declarado en el .txt
+    ''                    -> ('', 0)
+
+    El nivel ausente se guarda como 0 (no None) para que Chroma pueda
+    filtrar/ordenar sobre metadata numérica sin problemas de tipo mixto.
+    """
+    valor_crudo = (valor_crudo or "").strip()
+    if not valor_crudo:
+        return "", 0
+
+    match = re.match(r"([A-Za-zÁÉÍÓÚáéíóúÑñ]+)\s*(?:\(nivel\s*(\d)\s*/\s*3\))?", valor_crudo)
+    if not match:
+        return normalizar_texto(valor_crudo), 0
+
+    categoria = normalizar_texto(match.group(1))
+    nivel = int(match.group(2)) if match.group(2) else 0
+    return categoria, nivel
  
  
 def parse_cafe_file(filepath: str) -> Document:
@@ -81,6 +108,12 @@ def parse_cafe_file(filepath: str) -> Document:
         puntaje_acidez = float(campos.get("PUNTAJE_ACIDEZ", 0) or 0)
     except ValueError:
         puntaje_acidez = 0.0
+
+    perfil_categoria, perfil_nivel = parse_perfil(campos.get("PERFIL", ""))
+    if not perfil_categoria:
+        print(f"   ⚠️ {filepath}: PERFIL vacío o no reconocido ('{campos.get('PERFIL', '')}')")
+    elif perfil_nivel == 0:
+        print(f"   ⚠️ {filepath}: PERFIL '{campos.get('PERFIL', '')}' sin nivel declarado, se guarda perfil_nivel=0")
  
     metadata = {
         "tipo": "cafe",
@@ -92,6 +125,8 @@ def parse_cafe_file(filepath: str) -> Document:
         "variedad": campos.get("VARIEDAD", ""),
         "tostado": campos.get("TOSTADO", ""),
         "perfil": campos.get("PERFIL", ""),
+        "perfil_categoria": perfil_categoria,  # "exotico" | "tradicional" | "funky"
+        "perfil_nivel": perfil_nivel,          # 1-3, o 0 si no está declarado
         "sabor": campos.get("SABOR", ""),
         "acidez": campos.get("ACIDEZ", ""),
         "puntaje_acidez": puntaje_acidez,
@@ -187,12 +222,26 @@ try:
         shutil.rmtree(persist_directory)
  
     embeddings = OpenAIEmbeddings()
+    # anonymized_telemetry=False evita el warning "Failed to send telemetry
+    # event... capture() takes 1 positional argument but 3 were given"
+    # (incompatibilidad de versión chromadb/posthog, inofensivo pero ruidoso).
     vectorstore = Chroma.from_documents(
         documents=documents,
         embedding=embeddings,
-        persist_directory=persist_directory
+        persist_directory=persist_directory,
+        client_settings=Settings(
+            anonymized_telemetry=False,
+            is_persistent=True,
+            persist_directory=persist_directory,
+        ),
     )
     print("✅ Índice RAG guardado en ./chroma_db")
+ 
+    # Verificación DENTRO del mismo proceso, antes de salir
+    conteo_inmediato = vectorstore._collection.count()
+    print(f"🔬 DEBUG: conteo inmediato tras indexar (mismo proceso): {conteo_inmediato}")
+    print(f"🔬 DEBUG: nombre de colección (escritura): {vectorstore._collection.name}")
+    print(f"🔬 DEBUG: persist_directory absoluto (escritura): {os.path.abspath(persist_directory)}")
 except Exception as e:
     print(f"❌ Error al generar embeddings: {e}")
     sys.exit(1)

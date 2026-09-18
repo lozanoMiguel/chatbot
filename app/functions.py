@@ -11,15 +11,14 @@ from app.database import (
     intencion_descripcion,
     intencion_faq,
     intencion_metodo,
-    intencion_perfil,
     intencion_saludo,
     lista_cafes,
     lista_metodos,
-    lista_perfiles,
     palabras_espresso,
     palabras_filtro,
     seniales_listado,
-    seniales_ranking
+    seniales_ranking,
+    lista_perfiles
 )
 from app.models.preferencias_usuario import estado_usuario
 
@@ -37,7 +36,11 @@ def get_openai_client():
         _openai_client = OpenAI(api_key=OPENAI_API_KEY)
     return _openai_client
 
-
+def identificar_perfil(mensaje: str, session_id: str):
+    if any(per in mensaje for per in lista_perfiles):
+        estado_usuario[session_id].perfil = get_perfil(mensaje)
+    
+        
 def identificar_metodo(mensaje: str, session_id: str):
     if any(met in mensaje for met in lista_metodos):
         estado_usuario[session_id].metodo = get_metodo(mensaje)
@@ -45,12 +48,6 @@ def identificar_metodo(mensaje: str, session_id: str):
         nuevo_metodo = get_metodo(mensaje, True)
         if nuevo_metodo is not None:
             estado_usuario[session_id].metodo = nuevo_metodo
-
-def identificar_perfil(mensaje: str, session_id: str):
-    if any(per in mensaje for per in lista_perfiles):
-        estado_usuario[session_id].perfil = get_perfil(mensaje)
-    elif any(intencion in mensaje for intencion in intencion_perfil):
-        estado_usuario[session_id].perfil = get_perfil(mensaje, True)
 
 def get_metodo(mensaje: str, flag_ia: bool = False) -> Optional[str]:
     respuesta = ""
@@ -85,31 +82,9 @@ def get_metodo(mensaje: str, flag_ia: bool = False) -> Optional[str]:
         respuesta = "filtro"
         return respuesta
 
-def get_perfil(mensaje: str, flag_ia: bool = False) -> str:
+def get_perfil(mensaje: str) -> str:
     respuesta = ""
-    if flag_ia:
-        client = get_openai_client()
-        response = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                            {
-                                "role": "system",
-                                "content": """
-                                            Eres un clasificador de perfiles experto en café de especialidad.
-                                            Analiza el mensaje del usuario y clasifícalo en una de las siguientes categorías:
-                                            - tradicional: Sabores clásicos, achocolatados, nueces, caramelo. Acidez suave a media. Cuerpo meloso o jugoso. Ideal para quienes empiezan o buscan un espresso reconfortante.
-                                            - exotico: Sabores frutales (fresa, mango, mora), florales, cítricos. Acidez más marcada (málica, cítrica, tartárica). Cuerpo cremoso. Para paladares aventureros.
-                                            - funky: Sabores licorosos, fermentados, frutas maduras, vino, mermelada. Acidez media a alta. Cuerpo cremoso. Para expertos.
-                                            Solo responde con la categoria que corresponda, sino encaja en ninguna devuelve: ""
-                                            """,
-                            },
-                            {"role": "user", "content": mensaje}],
-                                temperature=0.5,
-                                max_tokens=20,
-                            )
-        respuesta = response.choices[0].message.content
-        print("Utilizando IA para detectar PERFIL!")
-        return respuesta
+    
     if any(palabra in mensaje for palabra in ["tradicional", "chocolat", "poca acidez", "clasico", "dulce"]):
         respuesta = "tradicional"
     elif any(palabra in mensaje for palabra in [ "exotic", "citrico", "floral", "citri", "frutal"]):
@@ -118,21 +93,9 @@ def get_perfil(mensaje: str, flag_ia: bool = False) -> str:
         respuesta = "funky"
     return respuesta
 
-def recomendar_cafe(metodo: str, perfil: str, session_id: str = None) -> list[str]:
-    """Recomienda cafés según método y perfil, y opcionalmente guarda la lista en el estado"""
-    matriz = {
-        ("espresso", "tradicional"): ["Alacran", "Condor", "Lince", "Yurumi"],
-        ("espresso", "exotico"): ["Dimeti", "Delfin Rosado", "Puma"],
-        ("espresso", "funky"): ["Coyote"],
-        ("filtro", "exotico"): ["Correcaminos", "Nebiri"],
-    }
-    cafes = matriz.get((metodo, perfil), [])
-
-    return cafes
-
-def describir_cafe(metodo: str, perfil: str, mensaje: str, ultimos_cafes:Optional[list])-> list:
+def cafes_mencionados(mensaje: str, ultimos_cafes:Optional[list])-> list:
     cafes_mencionados = []
-    # PRIORIDAD 1: Usar los cafés ya fueron consultados
+    
     for cafe in lista_cafes:
         cafe_normalizado = normalizar_texto(cafe)  # normaliza el cafe que coincidió para buscarlo en el mensaje pero agrega el cafe sin normalizar para la busqueda en el indice rag
         if cafe_normalizado in mensaje:
@@ -146,9 +109,9 @@ def describir_cafe(metodo: str, perfil: str, mensaje: str, ultimos_cafes:Optiona
         print("Usando ultimos cafes mencionados en la conversacion")
 
     # PRIORIDAD 2: Si no hay cafés guardados, usar la matriz según método+perfil
-    elif metodo and perfil:
-        cafes_mencionados = recomendar_cafe(metodo, perfil)
-        print(f"   📌 Usando matriz de funcion recomendar_Cafe: {cafes_mencionados}")
+    #elif metodo and perfil:
+        #cafes_mencionados = recomendar_cafe(metodo, perfil)
+        #print(f"   📌 Usando matriz de funcion recomendar_Cafe: {cafes_mencionados}")
 
     return cafes_mencionados
 
@@ -178,38 +141,109 @@ def normalizar_texto(texto: str) -> str:
 
     return texto
 
+def resolver_respuesta_afinamiento(user_lower: str, pregunta_afinando: dict) -> list[str] | None:
+    """
+    Resuelve qué opción eligió el usuario para la pregunta de afinamiento
+    activa.
+
+    Para 'leche' no alcanza con el match genérico (clave in user_lower):
+    las claves internas son 'con_leche'/'sin_leche' con guión bajo, y el
+    usuario nunca escribe eso — escribe "con leche", "sin leche", "solo",
+    etc. Además hay que priorizar 'sin' explícitamente, porque "sin
+    leche" también contiene la palabra "leche" y si se chequea "leche"
+    primero, cualquier respuesta cae siempre en con_leche.
+
+    Para el resto de los criterios (sabor, continente) las claves ya son
+    palabras sueltas que el usuario escribe tal cual (dulce, frutal,
+    funky, america, africa), así que ahí se mantiene el match directo.
+    """
+    criterio = pregunta_afinando.get("criterio")
+    opciones = pregunta_afinando["opciones"]
+
+    if criterio == "leche":
+        if contains_any(user_lower, ["sin leche", "solo", "negro", "sin"]):
+            return opciones.get("sin_leche")
+        if contains_any(user_lower, ["con leche", "leche", "con"]):
+            return opciones.get("con_leche")
+        return None
+
+    return next((cafes for clave, cafes in opciones.items() if clave in user_lower), None)
+
 def contains_any(text, terms):
     return any(
         re.search(rf"\b{re.escape(term)}\b", text)
         for term in terms
     )
 
+# Palabras que delatan una pregunta CONCEPTUAL ("¿qué es el filtro?",
+# "diferencia entre espresso y filtro") en vez de un pedido directo
+# ("para espresso", "algo tradicional"). es_pedido_metodo_perfil() las
+# usa para no atropellar intencion_faq/intencion_descripcion — sin esta
+# guarda, cualquier mensaje que solo mencione un método o perfil (por
+# ejemplo una pregunta sobre qué diferencia hay entre ellos) caería
+# directo en intencion_recomendacion.
+PALABRAS_CONCEPTUALES = {
+    "que", "como", "cual", "cuales", "por", "porque", "diferencia",
+    "significa", "significan", "explicame", "explica",
+}
+
+
+def es_pedido_metodo_perfil(mensaje_normalizado: str) -> bool:
+    """
+    Detecta pedidos directos y cortos que mencionan método y/o perfil sin
+    usar ninguna de las frases explícitas de intencion_recomendacion —
+    el patrón más común una vez que el chat ofrece perfiles: "para
+    espresso", "para filtro exotico", "algo tradicional".
+
+    Restringido a mensajes de <=5 palabras y sin palabras conceptuales
+    para no capturar preguntas tipo "¿qué diferencia hay entre espresso
+    y filtro?", que deben seguir cayendo en intencion_faq (vía IA, ya
+    que esos términos no están en el listado de intencion_faq).
+    """
+    palabras = mensaje_normalizado.split()
+    if len(palabras) > 5:
+        return False
+    if any(palabra in PALABRAS_CONCEPTUALES for palabra in palabras):
+        return False
+
+    menciona_metodo = any(met in mensaje_normalizado for met in lista_metodos)
+    menciona_perfil = any(per in mensaje_normalizado for per in lista_perfiles)
+    return menciona_metodo or menciona_perfil
+
 def requiere_ia(mensaje_normalizado: str) -> bool:
     texto = f" {mensaje_normalizado} "  # padding para que " mejor " matchee al inicio/fin también
     return any(p in texto for p in seniales_listado + seniales_ranking)
 
-def clasificar_intencion_simple(mensaje: str) -> str:
-
+def clasificar_intencion_simple(mensaje: str) -> dict | None:
     user_norm = normalizar_texto(mensaje)
-    
+
+    # 1. Prioridad absoluta: si menciona un café por nombre, es descripción
+    #    (evita que "proceso"/"acidez" del café X se coman por intencion_faq)
+    if any(normalizar_texto(cafe) in user_norm for cafe in lista_cafes):
+        return {"intent": "intencion_descripcion", "confidence": 1.0}
+
+    if contains_any(user_norm, intencion_descripcion):
+        return {"intent": "intencion_descripcion", "confidence": 1.0}
+
+    if contains_any(user_norm, intencion_recomendacion):
+        return {"intent": "intencion_recomendacion", "confidence": 1.0}
+
+    if es_pedido_metodo_perfil(user_norm):
+        return {"intent": "intencion_recomendacion", "confidence": 1.0}
+
+    if user_norm in intencion_saludo:
+        return {"intent": "intencion_saludo", "confidence": 1.0}
+
+    # 2. Recién acá, FAQ genérica — y solo si no hubo match de perfil/recomendación
     if contains_any(user_norm, intencion_faq):
         if requiere_ia(user_norm):
-            return None  # dejamos que la IA extraiga faq_modo/filtros
+            return None
         return {
             "intent": "intencion_faq", "confidence": 1.0,
             "faq_modo": "conceptual", "atributo_ranking": None,
             "orden": None, "n": None, "filtros": {},
         }
-        
-    if contains_any(user_norm, intencion_faq):
-        return "intencion_faq"
-    if contains_any(user_norm, intencion_descripcion):
-        return "intencion_descripcion"
-    if contains_any(user_norm, intencion_recomendacion):
-        return "intencion_recomendacion"
-    if user_norm in intencion_saludo:
-        return "intencion_saludo"
-    # No se pudo clasificar con reglas
+
     return None
 
 async def clasificar_con_ia(mensaje: str, historial: list[dict] = None) -> dict:
@@ -241,13 +275,12 @@ async def clasificar_con_ia(mensaje: str, historial: list[dict] = None) -> dict:
         INTENCIONES:
 
         intencion_recomendacion: el usuario quiere que le recomienden un café, de forma directa
-        (menciona perfil, método, sabores que busca, o pide ayuda para elegir).
+        (menciona método, sabores que busca, o pide ayuda para elegir).
         Ej: "Quiero un café exótico", "Tengo una V60, ¿qué me recomiendas?",
         "Busco algo achocolatado", "No sé qué elegir".
 
         intencion_descripcion: el usuario pregunta por las características de uno
-        o más cafés YA IDENTIFICADOS por nombre (o referidos como "esos cafés",
-        "este café" sobre algo mencionado antes).
+        o más cafés mediante nombre.
         Ej: "Descríbeme el Alacrán", "¿Qué origen tiene el Cóndor?",
         "Diferencia entre el Alacrán y el Cóndor".
 
@@ -272,8 +305,12 @@ async def clasificar_con_ia(mensaje: str, historial: list[dict] = None) -> dict:
         - atributo_ranking: "acidez" | "puntaje" | null (solo si faq_modo=ranking)
         - orden: "desc" | "asc" | null
         - n: cantidad de resultados pedidos, default 1
-        - filtros: {{"pais": "...", "proceso": "...", "perfil": "..."}} (solo si
-        faq_modo=filtro, solo las claves mencionadas)
+        - filtros: {{"pais": "...", "proceso": "...", "perfil": "...", "tostado": "..."}}
+        (solo si faq_modo=filtro, solo las claves mencionadas). "tostado" es el
+        método de preparación que menciona el usuario: "espresso" | "filtro"
+        (ej: "cafés de Colombia para espresso" -> filtros: {{"pais": "Colombia",
+        "tostado": "espresso"}} — permite combinar origen y método en un mismo
+        filtro).
 
         intencion_saludo: saludo, agradecimiento o despedida SIN otra petición.
         Ej: "Hola", "Gracias", "Nos vemos".
@@ -295,8 +332,8 @@ async def clasificar_con_ia(mensaje: str, historial: list[dict] = None) -> dict:
         "filtros": {{{{}}}}
         }}
 
-                            confidence:
-                            0.90-1.00 clara | 0.75-0.89 bastante clara | 0.50-0.74 ambigua | 0.00-0.49 incierta
+        confidence:
+        0.90-1.00 clara | 0.75-0.89 bastante clara | 0.50-0.74 ambigua | 0.00-0.49 incierta
     """
 
     try:
@@ -317,7 +354,6 @@ async def clasificar_con_ia(mensaje: str, historial: list[dict] = None) -> dict:
             return default
 
         datos = json.loads(json_match.group())
-        print(datos)
 
         confidence = float(datos.get("confidence", 0.0))
         intent = datos.get("intent", "intencion_recomendacion")

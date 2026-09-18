@@ -5,7 +5,7 @@ PROCESO: Lavado
 VARIEDAD: Heirloom
 ALTITUD: 2.100m
 TOSTADO: Expresso
-PERFIL: Exótico
+PERFIL: Exótico (nivel 3/3)
 SABOR: Afrutado
 NOTAS: Caramelo, albaricoque y jazmín
 ACIDEZ: Cítrica balanceada

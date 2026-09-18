@@ -4,7 +4,7 @@ REGION: Rwenzori Mountains
 PROCESO: Natural
 VARIEDAD: SL14
 TOSTADO: Filtro
-PERFIL: Exotico
+PERFIL: Exótico (nivel 2/3)
 SABOR: Afrutado
 NOTAS: Marshmallow, mermelada de fresa & almendras
 ACIDEZ: acidez tartarica media

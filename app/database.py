@@ -8,7 +8,23 @@ _pool: asyncpg.Pool | None = None
 
 
 lista_cafes: List[str] = [
-    "Alacrán", "Cóndor", "Lince", "Yurumi", "Dimeti", "Delfin Rosado", "Puma", "Coyote","Correcaminos", "Nebiri"
+    "Alacrán", "Cóndor", "Lince", "Yurumi", "Dimeti", "Delfin Rosado", "Puma", "Coyote","Correcaminos", "Nebiri", "Oryx", "Tucán","Engwe"
+]
+
+intencion_indiferencia: List[str] = [
+    "cualquiera",
+    "el que sea",
+    "no importa",
+    "sorprendeme",
+    "da igual",
+    "elige vos",
+    "el que quieras",
+    "no se cual",
+    "dame uno",
+    "recomiendame uno",
+    "recomendame uno",
+    "recomiendame alguno",
+    "recomendame alguno",
 ]
 
 intencion_metodo: List[str] = [
@@ -72,6 +88,21 @@ lista_metodos: List[str] = [
                             "fellow"
                         ]
 
+lista_perfiles: List[str] = [
+                             "tradicional",
+                             "clasico",
+                             "dulce",
+                             "frutal",
+                             "citrico",
+                             "floral",
+                             "fermentado",
+                             "licoroso",
+                             "exotico",
+                             "fanky",
+                             "funky",
+                             "fonky",
+                          ]
+
 palabras_espresso: List[str] = [
                                 "espresso",
                                 "espreso",
@@ -122,42 +153,6 @@ palabras_filtro: List[str] = [
                                 "fellow"
 ]
 
-intencion_perfil: List[str] = [
-                               "tradicional",
-                               "exotico",
-                               "funky",
-                               "notas",
-                               "sabor",
-                               "cuerpo",
-                               "huelen",
-                               "olor",
-                               "que sepa",
-                               "perfil",
-                               "intenso",
-                               "con mucha",
-                               "con mucho",
-                               "con poca",
-                               "acidez"
-                            ]
-
-lista_perfiles: List[str] = [
-                             "tradicional",
-                             "clasico",
-                             "dulce",
-                             "chocola",
-                             "poca acidez",
-                             "frutal",
-                             "citrico",
-                             "floral",
-                             "mucha acidez",
-                             "fermentado",
-                             "licoroso",
-                             "exotico",
-                             "fanky",
-                             "funky",
-                             "fonky",
-                          ]
-
 intencion_faq: List[str] = [
                             "sca",
                             "puntos sca",
@@ -194,11 +189,15 @@ intencion_faq: List[str] = [
 
 seniales_listado:List[str] = [
                         "cuales son los cafes",
+                        "cuales son",
                         "que cafes",
                         "cafes de",
                         "cafes con",
                         "cafes mas",
-                        "cafes menos"
+                        "cafes menos",
+                        "de tueste",
+                        "tueste espresso",
+                        "tueste filtro"
 ]
 
 seniales_ranking:List[str] = [
@@ -223,8 +222,8 @@ intencion_descripcion: List[str] = [
 ]
 
 intencion_recomendacion: List[str] = [
-                                #"recomiendame",
-                                #"que cafe me recomiendas",
+                                "recomiendame",
+                                "que cafe me recomiendas",
                                 "quiero un cafe",
                                 "busco un cafe",
                                 "me gustaria un cafe",
@@ -255,9 +254,6 @@ async def check_connection():
     await conn.close()
     return True
 
-
-
- 
  
 async def get_pool() -> asyncpg.Pool:
     """

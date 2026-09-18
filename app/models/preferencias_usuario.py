@@ -3,6 +3,7 @@ from typing import Optional
 
 class PreferenciasUsuario(BaseModel):
     metodo: Optional[str] = None
+    perfil: Optional[str] = None
     ultimos_cafes: list[str] = []
     candidatos_actuales: list[str] = []
     afinando: Optional[dict] = None

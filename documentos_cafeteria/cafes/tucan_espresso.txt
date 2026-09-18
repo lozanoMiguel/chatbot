@@ -3,7 +3,7 @@ PAIS: Colombia
 REGION: Huila
 PROCESO: Natural
 VARIEDAD: Castillo
-TOSTADO: Expresso
+TOSTADO: Expresso (nivel 3/3)
 PERFIL: Funky
 SABOR: Vinoso
 NOTAS: Mango, Licor de plátano y Mazapán

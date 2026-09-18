@@ -1,19 +1,20 @@
 import uuid
-
+import random
 from fastapi import APIRouter, HTTPException
 
-from app.database import save_message,get_conversation_history
+from app.database import save_message,get_conversation_history, intencion_indiferencia
 from app.functions import (
     clasificar_con_ia,
     clasificar_intencion_simple,
-    describir_cafe,
+    cafes_mencionados,
+    contains_any,
     get_openai_client,
     identificar_metodo,
     identificar_perfil,
     normalizar_texto,
 )
 from app.models import ChatRequest, ChatResponse, Request, Response
-from app.rag import buscar_contexto, obtener_cafes_por_nombre, top_cafes_por_acidez, top_cafes_por_puntaje,filtrar_por_metadata, elegir_criterio_discriminante,  candidatos_por_metodo
+from app.rag import buscar_contexto, obtener_cafes_por_nombre, top_cafes_por_acidez, top_cafes_por_puntaje,filtrar_por_metadata, elegir_criterio_discriminante,  candidatos_por_metodo, METODO_A_TOSTADO
 from app.models.preferencias_usuario import estado_usuario
 
 router = APIRouter()
@@ -33,14 +34,62 @@ async def preguntar(pregunta: Request):
 
         user_lower = normalizar_texto(user_message)
 
-        identificar_metodo(user_lower, session_id)
-        #identificar_perfil(user_lower, session_id)
+        # Guardamos método/perfil previos para poder distinguir "el usuario
+        # está respondiendo la pregunta activa" de "el usuario cambió de
+        # opinión a mitad de camino" — ver más abajo.
+        metodo_previo = estado_usuario[session_id].metodo
+        perfil_previo = estado_usuario[session_id].perfil
 
-        # asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriormente, utilizamos dicha variable sin tocar la original: estado_usuario)
+        identificar_metodo(user_lower, session_id)
+        identificar_perfil(user_lower, session_id)
+        
+        # asignamos los valores de estado_usuario a la variable estado (si hay que hacer modificaciones posteriores, utilizamos dicha variable sin tocar la original: estado_usuario)
         estado = estado_usuario[session_id]
         print(
-            f"   📊 Estadooo: método={estado.metodo}, ultimos_cafes={estado.ultimos_cafes}"
+            f"   📊 Estado: método={estado.metodo}, perfil={estado.perfil} ultimos_cafes={estado.ultimos_cafes}"
         )
+
+        # Si el afinamiento activo YA es la pregunta de perfil, un cambio de
+        # estado.perfil en este mensaje es la respuesta esperada a esa
+        # pregunta (se resuelve más abajo, en el bloque de intencion_recomendacion)
+        # — no es un pivot que deba tirar abajo lo ya armado.
+        afinando_activo_es_perfil = bool(estado.afinando) and estado.afinando.get("criterio") == "perfil"
+
+        cambio_metodo = metodo_previo is not None and estado.metodo != metodo_previo
+        cambio_perfil = (
+            perfil_previo is not None
+            and estado.perfil != perfil_previo
+            and not afinando_activo_es_perfil
+        )
+
+        # Reset del afinamiento en curso si método o perfil cambiaron a
+        # mitad de camino (no como respuesta a la pregunta activa).
+        if cambio_metodo and (estado.candidatos_actuales or estado.afinando):
+            print(
+                f"   🔄 Cambio de método a mitad de flujo ({metodo_previo}->{estado.metodo}), reiniciando afinamiento"
+            )
+            estado.candidatos_actuales = []
+            estado.afinando = None
+
+        if cambio_perfil and (estado.candidatos_actuales or estado.afinando):
+            print(
+                f"   🔄 Cambio de perfil a mitad de flujo ({perfil_previo}->{estado.perfil}), reiniciando afinamiento"
+            )
+            estado.candidatos_actuales = []
+            estado.afinando = None
+
+        # Fix quirúrgico: el perfil es "pegajoso" dentro del mismo método
+        # (si ya sabemos que quiere tradicional, no hace falta repreguntar
+        # con cada mensaje), pero NO cruza a un método distinto salvo que
+        # el usuario lo reafirme en el mismo mensaje en que cambia de
+        # método (ej. "para filtro exotico" sí lo reafirma; "para filtro"
+        # solo, no). Sin esto, un perfil elegido hace rato para espresso
+        # se arrastraba silenciosamente a una recomendación de filtro.
+        if cambio_metodo and not cambio_perfil and estado.perfil is not None:
+            print(
+                f"   🔄 Método cambió sin reafirmar perfil, soltando perfil previo ({perfil_previo})"
+            )
+            estado.perfil = None
 
         # ========== IDENTIFICAION DE INTENCION EN EL MENSAJE ==========
         resultado_ia = {}
@@ -71,37 +120,37 @@ async def preguntar(pregunta: Request):
         # ========== RUTA 1: IA para descripciones de cafe ==========
         if intencion == "intencion_descripcion":
             print("   🤖 Usando IA + RAG")
-            cafes_a_describir = describir_cafe(estado.metodo, estado.perfil, user_lower, estado.ultimos_cafes)
+            cafes = cafes_mencionados(user_lower, estado.ultimos_cafes)
 
-            if cafes_a_describir:
+            if cafes:
                 # Buscar contexto SOLO para esos cafés
-                print(f"\n🔍 Buscando: {cafes_a_describir}")
-                contexto = obtener_cafes_por_nombre(cafes_a_describir)
+                print(f"\n🔍 Buscando: {cafes}")
+                contexto = obtener_cafes_por_nombre(cafes, tostado=estado.metodo)
                 print(f"contexto:{contexto}")
 
                 system_prompt = f"""
-                    Eres dueño y tostador de una cafeteria que vende su cafe. Conoces todo el ciclo de produccion, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes_a_describir)}.
-
+                    Eres dueño de una cafetería de especialidad con tostador propio. Conoces todo el ciclo de producción, desde que te llega el grano verde, pasando por el tueste, las catas y el envasado. Tu tarea es describir ÚNICAMENTE los siguientes cafés: {", ".join(cafes)}.
                     No menciones ningún otro café que no esté en esta lista.
 
                     INFORMACIÓN DE CADA CAFÉ (Origen, notas, cuerpo, acidez y recomendacion):
                     {contexto}
 
+                    Si la información anterior no incluye datos para alguno de los cafés listados,
+                    no inventes esos datos: nombralo igual pero aclará que no tenés la ficha completa.
+
                     REGLAS DE FORMATO OBLIGATORIAS:
-                    1. Si el usuario especifica la cantidad de cafes que quiere que le recomiendes, solo recomienda esa cantidado, ni mas ni menos. por ej: "recomiendame un cafe", "recomiendame dos cafes"
-                    2. Escribe CADA café en una línea NUEVA.
-                    3. Menciona el nombre del cafe en formato negrita.
-                    4. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
-                    5. Puedes agregar 2 o 3 emojis, no mas.
-                    6. Ejemplo de formato CORRECTO:
+                    1. Escribe CADA café en una línea NUEVA.
+                    2. Menciona el nombre del café en formato negrita.
+                    3. Comienza cada línea con un guión (-) o un número (1., 2., etc.).
+                    4. Puedes agregar 2 o 3 emojis en total, no más.
+                    5. Ejemplo de formato CORRECTO:
 
-                    - Alacrán: Cafe de El Salvador, de la region de Apaneca-Ilamatepec. Tiene notas a chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
+                    - Alacrán: Café de El Salvador, de la región de Apaneca-Ilamatepec. Tiene notas a chocolate y almendra. Cuerpo meloso, acidez suave. Perfecto para quienes buscan un café clásico con notas a chocolate y frutos secos.
 
-                    - Cóndor: Cafe de Colombia, de la region de Huila. Con notas a caramelo y frutos amarillos. Cuerpo jugoso, acidez equilibrada, Ideal para principiantes o para quienes toman café con leche.
+                    - Cóndor: Café de Colombia, de la región de Huila. Con notas a caramelo y frutos amarillos. Cuerpo jugoso, acidez equilibrada. Ideal para principiantes o para quienes toman café con leche.
 
                     Responde de forma natural y entusiasta, pero respetando el formato.
-
-                    """
+                """
                 client = get_openai_client()
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -141,7 +190,17 @@ async def preguntar(pregunta: Request):
 
             elif faq_modo == "filtro":
                 filtros = resultado_ia.get("filtros") or {}
-                contexto = filtrar_por_metadata(**filtros) if filtros else buscar_contexto(user_lower, tipo="faq")
+                if "tostado" in filtros:
+                    # La metadata guarda "Expresso" (con x, no "espresso"),
+                    # igual que en candidatos_por_metodo — mismo mapeo para
+                    # que el filtro por tostado matchee de verdad.
+                    valor_tostado = str(filtros["tostado"]).lower()
+                    filtros["tostado"] = METODO_A_TOSTADO.get(valor_tostado, valor_tostado)
+                contexto = (
+                    filtrar_por_metadata(nombres=nombres_base, **filtros)
+                    if filtros
+                    else buscar_contexto(user_lower, tipo="faq")
+                )
                 print(f"   📦 Cafés en contexto: {[l for l in contexto.split(chr(10)) if l.startswith('NOMBRE')]}")
             else:
                 contexto = buscar_contexto(user_lower, tipo="faq")
@@ -150,11 +209,15 @@ async def preguntar(pregunta: Request):
                 l.replace("NOMBRE:", "").strip()
                 for l in contexto.split("\n")
                 if l.strip().startswith("NOMBRE")
-]
+            ]
+            
+            if faq_modo == "filtro" and nombres_esperados:
+                estado.ultimos_cafes = nombres_esperados
+            
                 
             if faq_modo in ("ranking", "filtro"):
                 system_prompt = f"""
-                Eres un experto en café de especialidad de nuestra cafetería.
+                Eres un experto en café de especialidad.
 
                 Usa ÚNICAMENTE la siguiente información para responder. Los cafés
                 mencionados abajo son TODO nuestro catálogo relevante a esta
@@ -180,7 +243,7 @@ async def preguntar(pregunta: Request):
                 completar la respuesta.
 
                 REGLAS DE FORMATO:
-                - Menciona cada café en formato negrita y puedes agregarle a cada uno de ellos, uno o dos emojis, no mas
+                - Menciona cada café en formato negrita y puedes agregarle a cada uno de ellos, uno o dos emojis.
                 
             """
             else:  # conceptual — aquí sí tiene sentido dar más libertad
@@ -200,17 +263,17 @@ async def preguntar(pregunta: Request):
                     - Puedes usar 2 o 3 emojis, no más.
                 """                  
             client = get_openai_client()
-            temperature = 0.1 if faq_modo in ("ranking", "filtro") else 0.5
-            response = client.chat.completions.create(
-                                model="gpt-4o-mini",
-                                messages=[
+            #temperature = 0.1 if faq_modo in ("ranking", "filtro") else 0.5
+            response = client.responses.create(
+                                model="gpt-5.6-luna",
+                                input=[
                                     {"role": "system", "content": system_prompt},
                                     {"role": "user", "content": user_message},
                                 ],
-                                temperature=temperature,
-                                max_tokens=500,
+                                
+                                max_output_tokens=500,
                             )
-            respuesta_texto = response.choices[0].message.content    
+            respuesta_texto = response.output_text  
             if faq_modo in ("ranking", "filtro") and nombres_esperados:
                 faltantes = [n for n in nombres_esperados if n not in respuesta_texto]
                 if faltantes:
@@ -244,7 +307,7 @@ async def preguntar(pregunta: Request):
                         temperature=0.1,
                         max_tokens=500,
                     )
-                respuesta_texto = response.choices[0].message.content
+                respuesta_texto = response.output_text
  
         # ========== RUTA 3: Saludos y agradecimientos ==========
         elif intencion == "intencion_saludo":
@@ -262,23 +325,57 @@ async def preguntar(pregunta: Request):
             respuesta_texto = None
             cafes_a_describir = None
 
-            if estado.afinando:
-                opciones = estado.afinando["opciones"]
-                elegido = next((cafes for clave, cafes in opciones.items() if clave in user_lower), None)
+            pool_indiferencia = (
+                estado.candidatos_actuales
+                or [c for lista in (estado.afinando or {}).get("opciones", {}).values() for c in lista]
+                or estado.ultimos_cafes
+            )
+            if pool_indiferencia and contains_any(user_lower, intencion_indiferencia):
+                cafes_a_describir = [random.choice(pool_indiferencia)]
                 estado.afinando = None
-                estado.candidatos_actuales = elegido if elegido else estado.candidatos_actuales
+                estado.candidatos_actuales = []
+
+            elif estado.afinando:
+                criterio_activo = estado.afinando.get("criterio")
+                opciones = estado.afinando["opciones"]
+                clave_elegida = next((clave for clave in opciones.keys() if clave in user_lower), None)
+                estado.afinando = None
+                if clave_elegida:
+                    estado.candidatos_actuales = opciones[clave_elegida]
+                    # Si lo que se estaba afinando era perfil, guardamos la
+                    # elección en estado.perfil — así queda disponible para
+                    # el atajo de candidatos_por_metodo si más adelante
+                    # cambia el método y hay que recalcular candidatos.
+                    if criterio_activo == "perfil":
+                        estado.perfil = clave_elegida
+                # si no matcheó ninguna clave, candidatos_actuales queda
+                # como estaba (comportamiento previo sin cambios)
 
             elif not estado.metodo:
                 respuesta_texto = "¡Perfecto! ☕ Primero, ¿cómo lo vas a preparar? Espresso o filtro?"
 
             elif not estado.candidatos_actuales:
-                estado.candidatos_actuales = candidatos_por_metodo(estado.metodo)
+                # Si ya detectamos el perfil de antemano (mensaje del tipo
+                # "quiero un espresso exótico"), nos saltamos la pregunta de
+                # perfil y arrancamos directo filtrados por método+perfil.
+                if estado.perfil:
+                    estado.candidatos_actuales = candidatos_por_metodo(estado.metodo, estado.perfil)
+                    if not estado.candidatos_actuales:
+                        # Cruce método+perfil sin resultados (p.ej. "filtro
+                        # funky" y no hay funky en filtro todavía): en vez
+                        # de un callejón sin salida, ignoramos el perfil
+                        # detectado y volvemos al filtro solo por método.
+                        print(f"   ⚠️ Sin cafés {estado.perfil} para {estado.metodo}, ignorando perfil detectado")
+                        estado.perfil = None
+
+                if not estado.candidatos_actuales:
+                    estado.candidatos_actuales = candidatos_por_metodo(estado.metodo)
+
                 if not estado.candidatos_actuales:
                     respuesta_texto = f"No tenemos cafés disponibles para {estado.metodo} por ahora."
 
-            # Si no se resolvió arriba (pidiendo método, o "no tenemos"), seguimos:
-            if respuesta_texto is None:
-                siguiente_pregunta = elegir_criterio_discriminante(estado.candidatos_actuales)
+            if respuesta_texto is None and not cafes_a_describir:
+                siguiente_pregunta = elegir_criterio_discriminante(estado.candidatos_actuales, estado.metodo)
                 if siguiente_pregunta:
                     estado.afinando = siguiente_pregunta
                     respuesta_texto = siguiente_pregunta["pregunta"]
@@ -287,7 +384,7 @@ async def preguntar(pregunta: Request):
 
             if cafes_a_describir:
                 print(f"\n🔍 Buscando: {cafes_a_describir}")
-                contexto = obtener_cafes_por_nombre(cafes_a_describir)
+                contexto = obtener_cafes_por_nombre(cafes_a_describir, tostado=estado.metodo)
                 estado.ultimos_cafes = cafes_a_describir
                 estado.candidatos_actuales = []
                 system_prompt = f"""
